@@ -1,0 +1,36 @@
+[project]
+name = "rest"
+version = "0.1.0"
+description = "Add your description here"
+authors = [{ name = "PorcoRosso85", email = "1.is.universe@gmail.com" }]
+dependencies = [
+    "django>=5.0.2",
+    "djangorestframework>=3.14.0",
+    "psycopg[binary]>=3.1.18",
+]
+readme = "README.md"
+requires-python = ">= 3.12"
+
+[project.scripts]
+hello = "rest:hello"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.rye]
+managed = true
+dev-dependencies = [
+    "pytest>=8.0.0",
+    "black>=24.2.0",
+    "mypy>=1.8.0",
+    "ruff>=0.2.1",
+    "djangorestframework>=3.14.0",
+    "psycopg[binary]>=3.1.18",
+]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["core/settings.py"]
