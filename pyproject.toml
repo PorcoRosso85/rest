@@ -27,6 +27,7 @@ dev-dependencies = [
     "ruff>=0.2.1",
     "djangorestframework>=3.14.0",
     "psycopg[binary]>=3.1.18",
+    "pytest-django>=4.8.0",
 ]
 
 [tool.hatch.metadata]
@@ -34,3 +35,13 @@ allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["core/settings.py"]
+
+[tool.pytest.ini_options]
+python_files = ["tests.py", "test_*.py", "tests/**/*.py", "**/*.py"]
+# filterwarnings = ["ignore::DeprecationWarning", "error"]
+addopts = [
+    # "--cov=rest",
+    # "--cov-report=term-missing",
+    # "--cov-report=html",
+    # "--disable-pytest-warnings",
+]
