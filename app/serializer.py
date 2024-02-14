@@ -153,11 +153,11 @@ class SpaceSerializer(serializers.ModelSerializer):
     ```
     """
 
-    content = ContentSerializer(read_only=True)
+    content = ContentSerializer(read_only=True, many=True)
 
     class Meta:
         model = Space
-        fields = "__all__"
+        fields = "id", "content"
 
 
 class TestSpaceSerializer:
@@ -184,7 +184,7 @@ class TestSpaceSerializer:
         content = Content.objects.create(title="Test Content", status=status)
 
         # SpaceインスタンスにContentインスタンスを関連付け
-        self.space.content = content
+        self.space.content.set([content])
         self.space.save()
 
         # Serializerを作成
@@ -193,16 +193,20 @@ class TestSpaceSerializer:
         # Serializerのデータが期待通りであることを確認
         assert serializer.data == {
             "id": self.space.id,
-            "name": "Test Space",
-            "associate": self.space.associate,
-            "created_at": self.space.created_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
-            "updated_at": self.space.updated_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
-            "content": {
-                "id": content.id,
-                "title": "Test Content",
-                "created_at": content.created_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
-                "updated_at": content.updated_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
-                "published_at": content.published_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
-                "status": content.status.id,
-            },
+            # "name": "Test Space",
+            # "associate": self.space.associate,
+            # "created_at": self.space.created_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+            # "updated_at": self.space.updated_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+            "content": [
+                {
+                    "id": content.id,
+                    "title": "Test Content",
+                    "created_at": content.created_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+                    "updated_at": content.updated_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+                    "published_at": content.published_at.strftime(
+                        "%Y-%m-%dT%H:%M:%S.%fZ"
+                    ),
+                    "status": content.status.id,
+                }
+            ],
         }

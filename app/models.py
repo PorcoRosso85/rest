@@ -149,9 +149,9 @@ class Space(models.Model):
     name = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    associate = models.ForeignKey(
-        Associate, related_name="spaces", on_delete=models.CASCADE, null=True
+    associate = models.ManyToManyField(
+        Associate, related_name="spaces", blank=True, null=True
     )
-    content = models.ForeignKey(
-        Content, related_name="spaces", on_delete=models.CASCADE, null=True
+    content = models.ManyToManyField(
+        Content, related_name="spaces", blank=True, null=True
     )
