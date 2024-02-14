@@ -170,6 +170,11 @@ class TestSpaceSerializer:
 
     def setup_method(self):
         self.space = Space.objects.create(name="Test Space")
+        self.status = Status.objects.create(status="draft")
+        self.content = Content.objects.create(title="Test Content", status=self.status)
+        # SpaceインスタンスにContentインスタンスを関連付け
+        self.space.content.set([self.content])
+        self.space.save()
 
     @pytest.mark.django_db
     def test_space_serializer(self):
@@ -178,16 +183,7 @@ class TestSpaceSerializer:
         assert self.space.name != "Test Spac"
 
     @pytest.mark.django_db
-    def test_space_serializer_with_content(self):
-        status = Status.objects.create(status="draft")
-        # Contentインスタンスを作成
-        content = Content.objects.create(title="Test Content", status=status)
-
-        # SpaceインスタンスにContentインスタンスを関連付け
-        self.space.content.set([content])
-        self.space.save()
-
-        # Serializerを作成
+    def test_space_serializer_with_content_error01(self):
         serializer = SpaceSerializer(self.space)
 
         # Serializerのデータが期待通りであることを確認
@@ -199,17 +195,25 @@ class TestSpaceSerializer:
             "updated_at": self.space.updated_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
             "content": [
                 {
-                    "id": content.id,
+                    "id": self.content.id,
                     "title": "Test Content",
-                    "created_at": content.created_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
-                    "updated_at": content.updated_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
-                    "published_at": content.published_at.strftime(
+                    "created_at": self.content.created_at.strftime(
                         "%Y-%m-%dT%H:%M:%S.%fZ"
                     ),
-                    "status": content.status.id,
+                    "updated_at": self.content.updated_at.strftime(
+                        "%Y-%m-%dT%H:%M:%S.%fZ"
+                    ),
+                    "published_at": self.content.published_at.strftime(
+                        "%Y-%m-%dT%H:%M:%S.%fZ"
+                    ),
+                    "status": self.content.status.id,
                 }
             ],
         }
+
+    @pytest.mark.django_db
+    def test_space_serializer_with_content_error02(self):
+        serializer = SpaceSerializer(self.space)
         assert serializer.data != {
             "id": self.space.id,
             "name": "Test Space",
@@ -217,30 +221,36 @@ class TestSpaceSerializer:
             "created_at": self.space.created_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
             "updated_at": self.space.updated_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
             "content": {
-                "id": content.id,
+                "id": self.content.id,
                 "title": "Test Content",
-                "created_at": content.created_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
-                "updated_at": content.updated_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
-                "published_at": content.published_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
-                "status": content.status.id,
+                "created_at": self.content.created_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+                "updated_at": self.content.updated_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+                "published_at": self.content.published_at.strftime(
+                    "%Y-%m-%dT%H:%M:%S.%fZ"
+                ),
+                "status": self.content.status.id,
             },
         }
+
+    @pytest.mark.django_db
+    def test_space_serializer_with_content(self):
+        serializer = SpaceSerializer(self.space)
         assert serializer.data == {
             "id": self.space.id,
-            # "name": "Test Space",
-            # "associate": self.space.associate,
-            # "created_at": self.space.created_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
-            # "updated_at": self.space.updated_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
             "content": [
                 {
-                    "id": content.id,
+                    "id": self.content.id,
                     "title": "Test Content",
-                    "created_at": content.created_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
-                    "updated_at": content.updated_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
-                    "published_at": content.published_at.strftime(
+                    "created_at": self.content.created_at.strftime(
                         "%Y-%m-%dT%H:%M:%S.%fZ"
                     ),
-                    "status": content.status.id,
+                    "updated_at": self.content.updated_at.strftime(
+                        "%Y-%m-%dT%H:%M:%S.%fZ"
+                    ),
+                    "published_at": self.content.published_at.strftime(
+                        "%Y-%m-%dT%H:%M:%S.%fZ"
+                    ),
+                    "status": self.content.status.id,
                 }
             ],
         }
