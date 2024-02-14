@@ -3,6 +3,8 @@ from django.db import models
 
 
 class Structure(models.Model):
+    """userが作成した構造(モデルと呼ばれる)を管理する"""
+
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=100)
     description = models.TextField()
@@ -37,6 +39,9 @@ class Status(models.Model):
 
 class Content(models.Model):
     id = models.AutoField(primary_key=True)
+    model = models.ForeignKey(
+        Structure, related_name="contents", on_delete=models.CASCADE, null=True
+    )
     title = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

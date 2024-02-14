@@ -37,74 +37,73 @@ class ContentSerializer(serializers.ModelSerializer):
         "_updated_at": "2023-01-23T04:50:00Z",
         "_published_at": "2023-01-23T04:50:00Z",
         "_status": "published",
-        "content": {
-            "flexibletext_field": "<div><h2>abcedf</h2><p>abcedf</p><ul><li>abcedf</li></ul></div>",
+
+        "flexibletext_field": "<div><h2>abcedf</h2><p>abcedf</p><ul><li>abcedf</li></ul></div>",
+        "singleline_field": "foobar",
+        "multiline_field": "foo\nbar",
+        "boolean_field": true,
+        "singleselect_field": "value1",
+        "datetime_field": "2023-01-23T04:50:00Z",
+        "media_field": {
+          "url": "https://cms-assets.nilto.com/spaces/1234567890/media/2345678901/_/abc.png",
+          "alt": "alternative text"
+        },
+        "repeat_field": [
+          {
             "singleline_field": "foobar",
-            "multiline_field": "foo\nbar",
-            "boolean_field": true,
-            "singleselect_field": "value1",
-            "datetime_field": "2023-01-23T04:50:00Z",
-            "media_field": {
-              "url": "https://cms-assets.nilto.com/spaces/1234567890/media/2345678901/_/abc.png",
-              "alt": "alternative text"
-            },
-            "repeat_field": [
-              {
-                "singleline_field": "foobar",
-                "boolean_field": true
-              },
-              {
-                "singleline_field": "foobarbaz",
-                "boolean_field": false
-              }
-            ],
-            "combination_field": [
-              {
-                "luid": "block_a",
-                "fields": {
-                  "multiline_field": "foo\nbar",
-                  "boolean_field": true
-                }
-              },
-              {
-                "luid": "block_b",
-                "fields": {
-                  "datetime_field": "2023-01-23T04:50:00Z",
-                  "repeat_field": [
-                    {
-                      "singleline_field": "foobar"
-                    },
-                    {
-                      "singleline_field": "foobarbaz"
-                    }
-                  ]
-                }
-              },
-              {
-                "luid": "block_a",
-                "fields": {
-                  "multiline_field": "foo\nbar\nbaz",
-                  "boolean_field": false
-                }
-              }
-            ],
-            "reference_field": {
-              "_id": "1234567890",
-              "_title": "Hello World2",
-              "_created_at": "2023-01-23T04:50:00Z",
-              "_updated_at": "2023-01-23T04:50:00Z",
-              "_published_at": "2023-01-23T04:50:00Z",
-              "_status": "draft",
-              "reference_field": "2345678901"
-            },
-            "block1": {
-              "singleline_field": "foobar",
-              "boolean_field": true
-            },
-            "block2": {
+            "boolean_field": true
+          },
+          {
+            "singleline_field": "foobarbaz",
+            "boolean_field": false
+          }
+        ],
+        "combination_field": [
+          {
+            "luid": "block_a",
+            "fields": {
               "multiline_field": "foo\nbar",
-              "datetime_field": "2023-01-23T04:50:00Z"
+              "boolean_field": true
             }
+          },
+          {
+            "luid": "block_b",
+            "fields": {
+              "datetime_field": "2023-01-23T04:50:00Z",
+              "repeat_field": [
+                {
+                  "singleline_field": "foobar"
+                },
+                {
+                  "singleline_field": "foobarbaz"
+                }
+              ]
+            }
+          },
+          {
+            "luid": "block_a",
+            "fields": {
+              "multiline_field": "foo\nbar\nbaz",
+              "boolean_field": false
+            }
+          }
+        ],
+        "reference_field": {
+          "_id": "1234567890",
+          "_title": "Hello World2",
+          "_created_at": "2023-01-23T04:50:00Z",
+          "_updated_at": "2023-01-23T04:50:00Z",
+          "_published_at": "2023-01-23T04:50:00Z",
+          "_status": "draft",
+          "reference_field": "2345678901"
+        },
+        "block1": {
+          "singleline_field": "foobar",
+          "boolean_field": true
+        },
+        "block2": {
+          "multiline_field": "foo\nbar",
+          "datetime_field": "2023-01-23T04:50:00Z"
         }
       }
     ]
@@ -129,6 +128,7 @@ def test_content_serializer():
     # Serializerのデータが期待通りであることを確認
     assert serializer.data == {
         "id": content.id,
+        "model": None,
         "title": "Test Content",
         "created_at": content.created_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
         "updated_at": content.updated_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
@@ -240,6 +240,7 @@ class TestSpaceSerializer:
             "content": [
                 {
                     "id": self.content.id,
+                    "model": None,
                     "title": "Test Content",
                     "created_at": self.content.created_at.strftime(
                         "%Y-%m-%dT%H:%M:%S.%fZ"
