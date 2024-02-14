@@ -7,12 +7,13 @@ dependencies = [
     "django>=5.0.2",
     "djangorestframework>=3.14.0",
     "psycopg[binary]>=3.1.18",
+    "inline-snapshot>=0.6.1",
 ]
 readme = "README.md"
 requires-python = ">= 3.12"
 
 [project.scripts]
-hello = "rest:hello"
+# snapshot = "pytest --inline-snapshot=create"
 
 [build-system]
 requires = ["hatchling"]

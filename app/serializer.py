@@ -1,7 +1,12 @@
 import pytest
+from inline_snapshot import snapshot
 from rest_framework import serializers
 
 from app.models import Content, Space, Status
+
+
+def test_some():
+    assert 10239847 * 98750 == snapshot(1011184891250)
 
 
 class ResponseSerializer(serializers.Serializer):
