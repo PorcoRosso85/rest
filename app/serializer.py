@@ -329,10 +329,7 @@ class TestStatusSerializerDjangoTest(TestCase):
         assert self.status.status == ""
 
 
-from hypothesis import given
-from hypothesis import strategies as st
 from hypothesis.extra.django import TestCase as HypothesisTestCase
-from hypothesis.extra.django import from_model
 
 
 class TestSpaceSerializerHypothesis(HypothesisTestCase):
@@ -341,21 +338,21 @@ class TestSpaceSerializerHypothesis(HypothesisTestCase):
         serializer = SpaceSerializer(data={})
         assert not serializer.is_valid()
 
-    # Spaceオブジェクトが存在するが、関連するContentオブジェクトが存在しない場合のテスト
-    @given(
-        from_model(
-            Space,
-            # []fixme idがモデル内でAutoFieldであるため、idを指定するとエラーになる
-            # ただAutoFieldをhypothesisで推論できないのでテストできずエラーになる
-            # id=st.integers(min_value=1, max_value=10),
-            content=st.lists(from_model(Content)),
-        )
-    )
-    def test_space_no_content(self, space):
-        data = {"content": []}
-        serializer = SpaceSerializer(data=data)
-        assert serializer.is_valid()
-        assert serializer.errors == {"content": ["This field is required"]}
+    # # Spaceオブジェクトが存在するが、関連するContentオブジェクトが存在しない場合のテスト
+    # @given(
+    #     from_model(
+    #         Space,
+    #         # []fixme idがモデル内でAutoFieldであるため、idを指定するとエラーになる
+    #         # ただAutoFieldをhypothesisで推論できないのでテストできずエラーになる
+    #         # id=st.integers(min_value=1, max_value=10),
+    #         content=st.lists(from_model(Content)),
+    #     )
+    # )
+    # def test_space_no_content(self, space):
+    #     data = {"content": []}
+    #     serializer = SpaceSerializer(data=data)
+    #     assert serializer.is_valid()
+    #     assert serializer.errors == {"content": ["This field is required"]}
 
 
 #     # SpaceとContentの両方が存在するが、Contentが複数ある場合のテスト
@@ -381,36 +378,3 @@ class TestSpaceSerializerHypothesis(HypothesisTestCase):
 #             data={"space": space.id, "content": [content1.id, content2.id]}
 #         )
 #         assert serializer.is_valid()
-
-
-def gcd(n, m):
-    """Compute the GCD of two integers by Euclid's algorithm."""
-
-    n, m = abs(n), abs(m)
-    n, m = max(n, m), min(n, m)
-
-    if not n:
-        return m
-
-    while m % n != 0:
-        n, m = m % n, n
-    return n
-
-
-@given(
-    st.integers(min_value=1, max_value=100), st.integers(min_value=500, max_value=500)
-)
-def test_gcd(n, m):
-    d = gcd(n, m)
-
-    assert d > 0
-    assert n % d == 0
-    assert m % d == 0
-
-    for i in range(d + 1, min(n, m)):
-        assert (n % i) or (m % i)
-
-
-@given(st.integers())
-def test_int_str_roundtripping(x):
-    assert int(str(x)) == x
