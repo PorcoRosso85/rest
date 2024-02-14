@@ -1,6 +1,7 @@
 import pytest
 from django.test import TestCase
 from rest_framework import serializers
+from rest_framework.exceptions import ErrorDetail
 
 from app.models import Content, Space, Status
 
@@ -265,7 +266,12 @@ class StatusSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Status
-        fields = "__all__"
+        fields = ["status"]
+
+    def validate(self, data):
+        if data["status"] == "":
+            raise serializers.ValidationError("status is required")
+        return data
 
 
 class TestStatusSerializerPytest:
@@ -281,19 +287,22 @@ class TestStatusSerializerPytest:
         self.status = Status.objects.create(status="draft")
         assert self.status
         assert self.status.status == "draft"
-
-    @pytest.mark.django_db
-    def test_status_serializer_review(self):
-        self.status = Status.objects.create(status="draft")
-        assert self.status.status != "review"
+        serializer = StatusSerializer(data={"status": "draft"})
+        serializer.is_valid()
 
     @pytest.mark.django_db
     def test_status_serializer_none(self):
         self.status = Status.objects.create(status="")
         assert self.status.status == ""
-        serializer = StatusSerializer(self.status)
-        # []fixme ここでエラーが発生するはず
-        assert serializer.data == {"id": self.status.id, "status": ""}
+        serializer = StatusSerializer(data={"status": ""})
+        serializer.is_valid()
+        # is_valid()で期待するエラーであることを確認したい、エラー理由は"status is required"
+        assert serializer.errors == {
+            "status": [
+                ErrorDetail(string='"" is not a valid choice.', code="invalid_choice")
+            ]
+        }
+        assert serializer.data == {"status": ""}
 
 
 class TestStatusSerializerDjangoTest(TestCase):

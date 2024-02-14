@@ -28,17 +28,18 @@ def test_structure(structure):
     assert structure.updated_at
 
 
-class Status(models.Model):
-    """
-    draft, review, published, archived
-    StatusモデルのstatusフィールドはCharFieldで、choicesパラメータが設定されていますが、blank=Falseやnull=Falseといった制約が明示的に設定されていないため、空文字列("")を許容します。
-    DjangoのCharFieldはデフォルトでblank=False、null=Falseですが、これはデータベースレベルの制約であり、Pythonコードから直接モデルを操作する場合（例えばテストコードなど）は適用されません。Pythonコードから直接操作する場合、DjangoはCharFieldに対して空文字列を許容します。
-    statusフィールドに空文字列("")を許容しないようにするには、モデル定義でblank=Falseとnull=Falseを明示的に設定する必要があります。ただし、CharFieldに対してnull=Trueを設定することは推奨されません。空の値を表現するためには空文字列を使用するべきです。
-    また、choicesパラメータはフォームのバリデーション時にのみ適用され、モデルを直接操作する場合には適用されません。したがって、statusフィールドにchoicesで定義されていない値を設定することが可能です。
-    これらの制約を適用したい場合は、モデルのcleanメソッドをオーバーライドして、statusフィールドの値がSTATUS_OPTIONSに含まれるかどうかをチェックすることができます。
-    これは、DjangoのCharFieldがPythonレベルでは空文字列（""）を許容するためです。blank=Falseはフォームバリデーションに影響し、null=Falseはデータベースレベルの制約です。しかし、これらの制約はPythonコードから直接モデルを操作する場合には適用されません。
-    """
+"""
+draft, review, published, archived
+StatusモデルのstatusフィールドはCharFieldで、choicesパラメータが設定されていますが、blank=Falseやnull=Falseといった制約が明示的に設定されていないため、空文字列("")を許容します。
+DjangoのCharFieldはデフォルトでblank=False、null=Falseですが、これはデータベースレベルの制約であり、Pythonコードから直接モデルを操作する場合（例えばテストコードなど）は適用されません。Pythonコードから直接操作する場合、DjangoはCharFieldに対して空文字列を許容します。
+statusフィールドに空文字列("")を許容しないようにするには、モデル定義でblank=Falseとnull=Falseを明示的に設定する必要があります。ただし、CharFieldに対してnull=Trueを設定することは推奨されません。空の値を表現するためには空文字列を使用するべきです。
+また、choicesパラメータはフォームのバリデーション時にのみ適用され、モデルを直接操作する場合には適用されません。したがって、statusフィールドにchoicesで定義されていない値を設定することが可能です。
+これらの制約を適用したい場合は、モデルのcleanメソッドをオーバーライドして、statusフィールドの値がSTATUS_OPTIONSに含まれるかどうかをチェックすることができます。
+これは、DjangoのCharFieldがPythonレベルでは空文字列（""）を許容するためです。blank=Falseはフォームバリデーションに影響し、null=Falseはデータベースレベルの制約です。しかし、これらの制約はPythonコードから直接モデルを操作する場合には適用されません。
+"""
 
+
+class Status(models.Model):
     STATUS_OPTIONS = [
         ("draft", "Draft"),
         ("review", "Review"),
