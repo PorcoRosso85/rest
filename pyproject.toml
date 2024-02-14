@@ -31,6 +31,12 @@ dev-dependencies = [
     "pytest-django>=4.8.0",
 ]
 
+[tool.rye.scripts]
+test = "pytest"
+format = "black ."
+lint = "mypy ."
+snapshot = "pytest --inline-snapshot=create"
+
 [tool.hatch.metadata]
 allow-direct-references = true
 
