@@ -332,6 +332,7 @@ class TestStatusSerializerDjangoTest(TestCase):
 from hypothesis import given
 from hypothesis import strategies as st
 from hypothesis.extra.django import TestCase as HypothesisTestCase
+from hypothesis.extra.django import from_model
 
 
 class TestSpaceSerializerHypothesis(HypothesisTestCase):
@@ -340,12 +341,22 @@ class TestSpaceSerializerHypothesis(HypothesisTestCase):
         serializer = SpaceSerializer(data={})
         assert not serializer.is_valid()
 
+    # Spaceオブジェクトが存在するが、関連するContentオブジェクトが存在しない場合のテスト
+    @given(
+        from_model(
+            Space,
+            # []fixme idがモデル内でAutoFieldであるため、idを指定するとエラーになる
+            # ただAutoFieldをhypothesisで推論できないのでテストできずエラーになる
+            # id=st.integers(min_value=1, max_value=10),
+            content=st.lists(from_model(Content)),
+        )
+    )
+    def test_space_no_content(self, space):
+        data = {"content": []}
+        serializer = SpaceSerializer(data=data)
+        assert serializer.is_valid()
+        assert serializer.errors == {"content": ["This field is required"]}
 
-#     # Spaceオブジェクトが存在するが、関連するContentオブジェクトが存在しない場合のテスト
-#     @given(from_model(Space))
-#     def test_space_no_content(self, space):
-#         serializer = SpaceSerializer(data={"space": space.id})
-#         assert serializer.is_valid()
 
 #     # SpaceとContentの両方が存在するが、Contentが複数ある場合のテスト
 #     @given(
