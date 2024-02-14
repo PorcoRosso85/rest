@@ -191,6 +191,40 @@ class TestSpaceSerializer:
         serializer = SpaceSerializer(self.space)
 
         # Serializerのデータが期待通りであることを確認
+        assert serializer.data != {
+            "id": self.space.id,
+            "name": "Test Space",
+            "associate": self.space.associate,
+            "created_at": self.space.created_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+            "updated_at": self.space.updated_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+            "content": [
+                {
+                    "id": content.id,
+                    "title": "Test Content",
+                    "created_at": content.created_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+                    "updated_at": content.updated_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+                    "published_at": content.published_at.strftime(
+                        "%Y-%m-%dT%H:%M:%S.%fZ"
+                    ),
+                    "status": content.status.id,
+                }
+            ],
+        }
+        assert serializer.data != {
+            "id": self.space.id,
+            "name": "Test Space",
+            "associate": self.space.associate,
+            "created_at": self.space.created_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+            "updated_at": self.space.updated_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+            "content": {
+                "id": content.id,
+                "title": "Test Content",
+                "created_at": content.created_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+                "updated_at": content.updated_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+                "published_at": content.published_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+                "status": content.status.id,
+            },
+        }
         assert serializer.data == {
             "id": self.space.id,
             # "name": "Test Space",
