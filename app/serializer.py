@@ -1,5 +1,7 @@
 import pytest
+from django.test import TestCase
 from rest_framework import serializers
+from rest_framework.exceptions import ErrorDetail
 
 from app.models import Content, Space, Status
 
@@ -255,3 +257,68 @@ class TestSpaceSerializer:
                 }
             ],
         }
+
+
+class StatusSerializer(serializers.ModelSerializer):
+    """
+    statusを返すシリアライザ
+    """
+
+    class Meta:
+        model = Status
+        fields = ["status"]
+
+    def validate(self, data):
+        if data["status"] == "":
+            raise serializers.ValidationError("status is required")
+        return data
+
+
+class TestStatusSerializerPytest:
+    """
+    statusを返すシリアライザのテスト
+    """
+
+    # def setup_method(self):
+    #     self.status = Status.objects.create(status="draft")
+
+    @pytest.mark.django_db
+    def test_status_serializer_draft(self):
+        self.status = Status.objects.create(status="draft")
+        assert self.status
+        assert self.status.status == "draft"
+        serializer = StatusSerializer(data={"status": "draft"})
+        serializer.is_valid()
+
+    @pytest.mark.django_db
+    def test_status_serializer_none(self):
+        self.status = Status.objects.create(status="")
+        assert self.status.status == ""
+        serializer = StatusSerializer(data={"status": ""})
+        serializer.is_valid()
+        # is_valid()で期待するエラーであることを確認したい、エラー理由は"status is required"
+        assert serializer.errors == {
+            "status": [
+                ErrorDetail(string='"" is not a valid choice.', code="invalid_choice")
+            ]
+        }
+        assert serializer.data == {"status": ""}
+
+
+class TestStatusSerializerDjangoTest(TestCase):
+    """
+    statusを返すシリアライザのテスト
+    """
+
+    def test_status_serializer_draft(self):
+        self.status = Status.objects.create(status="draft")
+        assert self.status.status == "draft"
+
+    def test_status_serializer_review(self):
+        self.status = Status.objects.create(status="draft")
+        assert self.status.status != "review"
+
+    def test_status_serializer_none(self):
+        """nullでも機能してしまうこと＝シリアライザ側でのバリデーションが必要であることを確認するテスト"""
+        self.status = Status.objects.create(status="")
+        assert self.status.status == ""
