@@ -7,12 +7,13 @@ dependencies = [
     "django>=5.0.2",
     "djangorestframework>=3.14.0",
     "psycopg[binary]>=3.1.18",
+    "inline-snapshot>=0.6.1",
 ]
 readme = "README.md"
 requires-python = ">= 3.12"
 
 [project.scripts]
-hello = "rest:hello"
+# snapshot = "pytest --inline-snapshot=create"
 
 [build-system]
 requires = ["hatchling"]
@@ -29,6 +30,12 @@ dev-dependencies = [
     "psycopg[binary]>=3.1.18",
     "pytest-django>=4.8.0",
 ]
+
+[tool.rye.scripts]
+test = "pytest"
+format = "black ."
+lint = "mypy ."
+snapshot = "pytest --inline-snapshot=create"
 
 [tool.hatch.metadata]
 allow-direct-references = true
