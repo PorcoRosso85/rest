@@ -161,6 +161,11 @@ class SpaceSerializer(serializers.ModelSerializer):
         model = Space
         fields = "id", "content"
 
+    def validate(self, data):
+        if "content" not in data or not data["content"]:
+            raise serializers.ValidationError("content is required")
+        return data
+
 
 class TestSpaceSerializer:
     """
@@ -322,3 +327,79 @@ class TestStatusSerializerDjangoTest(TestCase):
         """nullでも機能してしまうこと＝シリアライザ側でのバリデーションが必要であることを確認するテスト"""
         self.status = Status.objects.create(status="")
         assert self.status.status == ""
+
+
+from hypothesis import given
+from hypothesis import strategies as st
+from hypothesis.extra.django import TestCase as HypothesisTestCase
+
+
+class TestSpaceSerializerHypothesis(HypothesisTestCase):
+    # Spaceオブジェクトが存在しない場合のテスト
+    def test_no_space(self):
+        serializer = SpaceSerializer(data={})
+        assert not serializer.is_valid()
+
+
+#     # Spaceオブジェクトが存在するが、関連するContentオブジェクトが存在しない場合のテスト
+#     @given(from_model(Space))
+#     def test_space_no_content(self, space):
+#         serializer = SpaceSerializer(data={"space": space.id})
+#         assert serializer.is_valid()
+
+#     # SpaceとContentの両方が存在するが、Contentが複数ある場合のテスト
+#     @given(
+#         from_model(Space),
+#         from_model(Content, space=from_model(Space)),
+#         from_model(Content, space=from_model(Space)),
+#     )
+#     def test_space_multiple_content(self, space, content1, content2):
+#         serializer = SpaceSerializer(
+#             data={"space": space.id, "content": [content1.id, content2.id]}
+#         )
+#         assert serializer.is_valid()
+
+#     # SpaceとContentの両方が存在し、Contentが異なるStatusを持つ場合のテスト
+#     @given(
+#         from_model(Space),
+#         from_model(Content, space=from_model(Space), status="draft"),
+#         from_model(Content, space=from_model(Space), status="published"),
+#     )
+#     def test_space_content_different_status(self, space, content1, content2):
+#         serializer = SpaceSerializer(
+#             data={"space": space.id, "content": [content1.id, content2.id]}
+#         )
+#         assert serializer.is_valid()
+
+
+def gcd(n, m):
+    """Compute the GCD of two integers by Euclid's algorithm."""
+
+    n, m = abs(n), abs(m)
+    n, m = max(n, m), min(n, m)
+
+    if not n:
+        return m
+
+    while m % n != 0:
+        n, m = m % n, n
+    return n
+
+
+@given(
+    st.integers(min_value=1, max_value=100), st.integers(min_value=500, max_value=500)
+)
+def test_gcd(n, m):
+    d = gcd(n, m)
+
+    assert d > 0
+    assert n % d == 0
+    assert m % d == 0
+
+    for i in range(d + 1, min(n, m)):
+        assert (n % i) or (m % i)
+
+
+@given(st.integers())
+def test_int_str_roundtripping(x):
+    assert int(str(x)) == x
