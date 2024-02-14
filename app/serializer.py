@@ -1,6 +1,7 @@
+import pytest
 from rest_framework import serializers
 
-from app.models import Content, Status
+from app.models import Content, Space, Status
 
 
 class ResponseSerializer(serializers.Serializer):
@@ -19,25 +20,6 @@ class ResponseSerializer(serializers.Serializer):
         data = super().to_representation(instance)
         data["query_params"] = self.context["request"].query_params.get("q")
         return data
-
-
-class SpaceSerializer:
-    """
-    total, dataのみを返すシリアライザ
-    total: 結果の総数 <- len(data[])
-    data: 以下のjsonの[]
-
-    @example
-    ```json
-    {
-      "total;": 34,
-      "offset": 20,
-      "limit": 10,
-    }
-    ```
-    """
-
-    pass
 
 
 class ContentSerializer(serializers.ModelSerializer):
@@ -133,9 +115,6 @@ class ContentSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-import pytest
-
-
 @pytest.mark.django_db
 def test_content_serializer():
     # Statusインスタンスを作成
@@ -156,3 +135,74 @@ def test_content_serializer():
         "published_at": content.published_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
         "status": status.id,
     }
+
+
+class SpaceSerializer(serializers.ModelSerializer):
+    """
+    total, dataのみを返すシリアライザ
+    total: 結果の総数 <- len(data[])
+    data: 以下のjsonの[]
+
+    @example
+    ```json
+    {
+      "total;": 34,
+      "offset": 20,
+      "limit": 10,
+    }
+    ```
+    """
+
+    content = ContentSerializer(read_only=True)
+
+    class Meta:
+        model = Space
+        fields = "__all__"
+
+
+class TestSpaceSerializer:
+    """
+    jsonを返すシリアライザのテスト
+    jsonのうちdata[]は、ContentSerializerでテストされている
+    ContentSerializerから返されるデータをdata[]に入れてテストする
+    SpaceモデルはContentモデルと1対多の関係にある、Contentモデルを参照している
+    """
+
+    def setup_method(self):
+        self.space = Space.objects.create(name="Test Space")
+
+    @pytest.mark.django_db
+    def test_space_serializer(self):
+        assert self.space
+        assert self.space.name == "Test Space"
+        assert self.space.name != "Test Spac"
+
+    @pytest.mark.django_db
+    def test_space_serializer_with_content(self):
+        status = Status.objects.create(status="draft")
+        # Contentインスタンスを作成
+        content = Content.objects.create(title="Test Content", status=status)
+
+        # SpaceインスタンスにContentインスタンスを関連付け
+        self.space.content = content
+        self.space.save()
+
+        # Serializerを作成
+        serializer = SpaceSerializer(self.space)
+
+        # Serializerのデータが期待通りであることを確認
+        assert serializer.data == {
+            "id": self.space.id,
+            "name": "Test Space",
+            "associate": self.space.associate,
+            "created_at": self.space.created_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+            "updated_at": self.space.updated_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+            "content": {
+                "id": content.id,
+                "title": "Test Content",
+                "created_at": content.created_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+                "updated_at": content.updated_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+                "published_at": content.published_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+                "status": content.status.id,
+            },
+        }

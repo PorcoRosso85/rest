@@ -26,43 +26,6 @@ def test_structure(structure):
     assert structure.updated_at
 
 
-class Space(models.Model):
-    id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=100)
-    description = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    # Foreign Key
-    structure = models.ForeignKey(
-        Structure, related_name="spaces", on_delete=models.CASCADE
-    )
-
-
-@pytest.fixture
-def space(structure):
-    return Space.objects.create(
-        name="Test Space",
-        description="Test Description",
-        structure=structure,
-    )
-
-
-@pytest.mark.django_db
-def test_space(space):
-    assert space.name == "Test Space"
-    assert space.description == "Test Description"
-    assert space.created_at
-    assert space.updated_at
-    assert space.structure == space.structure
-    assert space.structure.name == "Test Structure"
-    assert space.structure.description == "Test Description"
-    assert space.structure.created_at
-    assert space.structure.updated_at
-    assert space.structure.spaces.count() == 1
-    assert space.structure.spaces.first() == space
-    assert space.structure.spaces.last() == space
-
-
 class Status(models.Model):
     """
     draft, review, published, archived
@@ -131,3 +94,64 @@ def test_content(content):
     assert (
         content.status.contents.last() == content
     )  # contentのステータスに関連付けられた最後のcontentがテスト対象のcontentであることを確認
+
+
+class Plan(models.Model):
+    """
+    Userのプランを管理する
+    'free', 'standard', 'premium'
+    """
+
+    PLAN_OPTIONS = [
+        ("free", "Free"),
+        ("standard", "Standard"),
+        ("premium", "Premium"),
+    ]
+
+    name = models.CharField(max_length=100, choices=PLAN_OPTIONS)
+
+
+class User(models.Model):
+    """
+    Userの情報を管理する
+    """
+
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    plan = models.ForeignKey(Plan, related_name="users", on_delete=models.CASCADE)
+
+
+class Associate(models.Model):
+    """
+    Userの所属先であり
+    複数のSpaceを持つことができる
+    """
+
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    user = models.ForeignKey(User, related_name="associates", on_delete=models.CASCADE)
+    content = models.ForeignKey(
+        Content, related_name="associates", on_delete=models.CASCADE
+    )
+
+
+class Space(models.Model):
+    """
+    どのAssosiatesがどのContentを持っているかを管理する
+    AssosiatesとContentの中間テーブル
+    """
+
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    associate = models.ForeignKey(
+        Associate, related_name="spaces", on_delete=models.CASCADE, null=True
+    )
+    content = models.ForeignKey(
+        Content, related_name="spaces", on_delete=models.CASCADE, null=True
+    )
