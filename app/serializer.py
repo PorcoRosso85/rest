@@ -1,4 +1,5 @@
 import pytest
+from django.test import TestCase
 from rest_framework import serializers
 
 from app.models import Content, Space, Status
@@ -255,3 +256,60 @@ class TestSpaceSerializer:
                 }
             ],
         }
+
+
+class StatusSerializer(serializers.ModelSerializer):
+    """
+    statusを返すシリアライザ
+    """
+
+    class Meta:
+        model = Status
+        fields = "__all__"
+
+
+class TestStatusSerializerPytest:
+    """
+    statusを返すシリアライザのテスト
+    """
+
+    # def setup_method(self):
+    #     self.status = Status.objects.create(status="draft")
+
+    @pytest.mark.django_db
+    def test_status_serializer_draft(self):
+        self.status = Status.objects.create(status="draft")
+        assert self.status
+        assert self.status.status == "draft"
+
+    @pytest.mark.django_db
+    def test_status_serializer_review(self):
+        self.status = Status.objects.create(status="draft")
+        assert self.status.status != "review"
+
+    @pytest.mark.django_db
+    def test_status_serializer_none(self):
+        self.status = Status.objects.create(status="")
+        assert self.status.status == ""
+        serializer = StatusSerializer(self.status)
+        # []fixme ここでエラーが発生するはず
+        assert serializer.data == {"id": self.status.id, "status": ""}
+
+
+class TestStatusSerializerDjangoTest(TestCase):
+    """
+    statusを返すシリアライザのテスト
+    """
+
+    def test_status_serializer_draft(self):
+        self.status = Status.objects.create(status="draft")
+        assert self.status.status == "draft"
+
+    def test_status_serializer_review(self):
+        self.status = Status.objects.create(status="draft")
+        assert self.status.status != "review"
+
+    def test_status_serializer_none(self):
+        """nullでも機能してしまうこと＝シリアライザ側でのバリデーションが必要であることを確認するテスト"""
+        self.status = Status.objects.create(status="")
+        assert self.status.status == ""
