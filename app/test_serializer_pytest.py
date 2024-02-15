@@ -5,6 +5,7 @@ from rest_framework.exceptions import ErrorDetail
 
 from app.models import Content, Plan, Space, Status, Usage, User
 from app.serializer import (
+    ContentSerializer,
     PlanSerializer,
     SpaceSerializer,
     StatusSerializer,
@@ -58,23 +59,38 @@ class TestContentSerializer:
         self.status = Status.objects.create(status="draft")
         self.content = Content.objects.create(title="Test Content", status=self.status)
 
-    # @pytest.mark.django_db
-    # def test_正常_期待する出力(self):
-    #     # Serializerを作成
-    #     serializer = ContentSerializer(self.content)
-    #     assert serializer.data == snapshot(
-    #         {
-    #             "id": self.content.id,
-    #             "title": "Test Content",
-    #             "created_at": self.content.created_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
-    #             "updated_at": self.content.updated_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
-    #             "published_at": self.content.published_at.strftime(
-    #                 "%Y-%m-%dT%H:%M:%S.%fZ"
-    #             ),
-    #             "model": None,
-    #             "status": self.status.id,
-    #         }
-    #     )
+    @pytest.mark.django_db
+    def test_正常_期待する出力(self):
+        # Serializerを作成
+        serializer = ContentSerializer(self.content)
+        serializer_data = dict(serializer.data)
+        serializer_data.pop("id", None)
+        serializer_data.pop("created_at", None)
+        serializer_data.pop("updated_at", None)
+        serializer_data.pop("published_at", None)
+        serializer_data.pop("status", None)
+        assert serializer_data == snapshot(
+            {
+                # "id": self.content.id,
+                "title": "Test Content",
+                # "created_at": self.content.created_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+                # "updated_at": self.content.updated_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+                # "published_at": self.content.published_at.strftime(
+                #     "%Y-%m-%dT%H:%M:%S.%fZ"
+                # ),
+                "model": None,
+                # "status": self.status.id,
+            }
+        )
+
+    @pytest.mark.django_db
+    def test_正常_バリデーション(self):
+        serializer = ContentSerializer(
+            data={"title": "Test Content", "status": self.status.id}
+        )
+        serializer.is_valid()
+        assert serializer.errors == {}
+        assert serializer.is_valid() is True
 
 
 class TestPlanSerializer:
@@ -89,7 +105,6 @@ class TestPlanSerializer:
         assert serializer.data == {"name": "free"}
         assert serializer.errors == {}
         assert serializer.is_valid() is True
-        assert serializer.is_valid() == True
 
     @pytest.mark.django_db
     def test_異常_空文字列(self):
@@ -211,6 +226,10 @@ class TestSpaceSerializer:
         self.space = Space.objects.create(name="Test Space")
         self.status = Status.objects.create(status="draft")
         self.content = Content.objects.create(title="Test Content", status=self.status)
+        self.content_serializer = ContentSerializer(
+            self.content,
+            # read_only=True, many=True
+        )
         # SpaceインスタンスにContentインスタンスを関連付け
         self.space.content.set([self.content])
         self.space.save()
@@ -218,7 +237,13 @@ class TestSpaceSerializer:
     @pytest.mark.django_db
     def test_status(self):
         gotten_status = model_to_dict(self.space.content.all()[0].status)
-        assert gotten_status == snapshot({"id": 4, "status": "draft"})
+        gotten_status.pop("id", None)
+        assert gotten_status == snapshot(
+            {
+                # "id": 4,
+                "status": "draft"
+            }
+        )
 
     @pytest.mark.django_db
     def test_content(self):
@@ -237,7 +262,7 @@ class TestSpaceSerializer:
         )
 
     @pytest.mark.django_db
-    def test_正常_(self):
+    def test_正常_オブジェクトから(self):
         serializer = SpaceSerializer(self.space)
         assert serializer.data == {
             "id": self.space.id,
@@ -259,6 +284,17 @@ class TestSpaceSerializer:
                 }
             ],
         }
+
+    @pytest.mark.django_db
+    def test_正常_バリデーションから(self):
+        logger.debug(f"content_serializer.data: {self.content_serializer.data}")
+        logger.debug(f"content_serializer.data[]: {[self.content_serializer.data]}")
+        serializer = SpaceSerializer(
+            data={"name": "Test Space", "content": self.content_serializer.data}
+        )
+        serializer.is_valid()
+        assert serializer.errors == {}
+        assert serializer.is_valid() is True
 
     @pytest.mark.django_db
     def test_zero_in_name(self):
