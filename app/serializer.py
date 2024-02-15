@@ -2,7 +2,7 @@ import re
 
 from rest_framework import serializers
 
-from app.models import Content, Plan, Space, Status, Usage, User
+from app.models import Associate, Content, Plan, Space, Status, Usage, User
 
 
 class StatusSerializer(serializers.ModelSerializer):
@@ -185,5 +185,5 @@ class AssociateSerializer(serializers.ModelSerializer):
     """
 
     class Meta:
-        model = User
+        model = Associate
         fields = "__all__"

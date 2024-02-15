@@ -5,6 +5,7 @@ from rest_framework.exceptions import ErrorDetail
 
 from app.models import Associate, Content, Plan, Space, Status, Usage, User
 from app.serializer import (
+    AssociateSerializer,
     ContentSerializer,
     PlanSerializer,
     SpaceSerializer,
@@ -322,3 +323,43 @@ class TestAssociateModel:
     @pytest.mark.django_db
     def test_正常_期待する出力(self):
         assert self.associate
+
+
+class TestAssociateSerializer:
+    def setup_method(self):
+        self.plan = Plan.objects.create(name="free")
+        self.user = User.objects.create(name="Test User", plan=self.plan)
+        self.space = Space.objects.create(name="Test Space")
+        self.usage = Usage.objects.create(data_transported=1, api_requested=1)
+        self.associate = Associate.objects.create(
+            name="Test Associate",
+            member=self.user,
+            space=self.space,
+            usage=self.usage,
+        )
+
+    @pytest.mark.django_db
+    def test_正常_期待する出力(self):
+        serializer = AssociateSerializer(
+            data={
+                "name": "Test Associate",
+                "member": self.user.id,
+                "space": self.space.id,
+                "usage": self.usage.id,
+            }
+        )
+        serializer.is_valid()
+        assert serializer.is_valid() is True
+        serializer_data = dict(serializer.data)
+        serializer_data.pop("member", None)
+        serializer_data.pop("space", None)
+        serializer_data.pop("usage", None)
+        assert serializer_data == snapshot(
+            {
+                "name": "Test Associate",
+                "icon": None,
+                # "member": 3,
+                # "space": 6,
+                # "usage": 4,
+            }
+        )
