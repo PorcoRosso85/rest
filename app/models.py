@@ -116,9 +116,6 @@ class Associate(models.Model):
     space = models.ForeignKey(
         Space, related_name="associates", on_delete=models.CASCADE, null=True
     )
-    plan = models.ForeignKey(
-        Plan, related_name="associates", on_delete=models.CASCADE, null=True
-    )
     usage = models.ForeignKey(
         Usage, related_name="associates", on_delete=models.CASCADE, null=True
     )

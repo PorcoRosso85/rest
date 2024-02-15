@@ -2,7 +2,7 @@ import re
 
 from rest_framework import serializers
 
-from app.models import Content, Space, Status
+from app.models import Content, Plan, Space, Status, User
 
 
 class StatusSerializer(serializers.ModelSerializer):
@@ -143,19 +143,27 @@ class SpaceSerializer(serializers.ModelSerializer):
         return data
 
 
-class ResponseSerializer(serializers.Serializer):
+class PlanSerializer(serializers.ModelSerializer):
     """
-    offset: 結果のオフセット <- クエリパラメータ offset
-    limit: 結果の制限 <- クエリパラメータ limit
-    total: SpaceSerializer
-    data: SpaceSerializer, []
+    planを返すシリアライザ
     """
 
     class Meta:
-        model = ""
-        fields = ["total", "offset", "limit"]
+        model = Plan
+        fields = "__all__"
 
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        data["query_params"] = self.context["request"].query_params.get("q")
+    def validate(self, data):
+        # free, standard, premiumのいずれかでない場合はエラー
+        if data["name"] not in ["free", "standard", "premium"]:
+            raise serializers.ValidationError("plan is invalid")
         return data
+
+
+class UserSerializer(serializers.ModelSerializer):
+    """
+    userを返すシリアライザ
+    """
+
+    class Meta:
+        model = User
+        fields = "__all__"

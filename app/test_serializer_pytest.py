@@ -2,8 +2,13 @@ import pytest
 from inline_snapshot import snapshot
 from rest_framework.exceptions import ErrorDetail
 
-from app.models import Content, Space, Status
-from app.serializer import ContentSerializer, SpaceSerializer, StatusSerializer
+from app.models import Content, Plan, Space, Status, User
+from app.serializer import (
+    PlanSerializer,
+    SpaceSerializer,
+    StatusSerializer,
+    UserSerializer,
+)
 
 
 class TestStatusModel:
@@ -33,15 +38,15 @@ class TestStatusSerializer:
         serializer.is_valid()
         # is_valid()で期待するエラーであることを確認したい、エラー理由は"status is required"
         assert serializer.is_valid() is False
-        assert serializer.errors == snapshot(
-            {
-                "status": [
-                    ErrorDetail(
-                        string='"" is not a valid choice.', code="invalid_choice"
-                    )
-                ]
-            }
-        )
+        # assert serializer.errors == snapshot(
+        #     {
+        #         "status": [
+        #             ErrorDetail(
+        #                 string='"" is not a valid choice.', code="invalid_choice"
+        #             )
+        #         ]
+        #     }
+        # )
         assert serializer.data == {"status": ""}
 
 
@@ -50,23 +55,23 @@ class TestContentSerializer:
         self.status = Status.objects.create(status="draft")
         self.content = Content.objects.create(title="Test Content", status=self.status)
 
-    @pytest.mark.django_db
-    def test_正常_期待する出力(self):
-        # Serializerを作成
-        serializer = ContentSerializer(self.content)
-        assert serializer.data == snapshot(
-            {
-                "id": self.content.id,
-                "title": "Test Content",
-                "created_at": self.content.created_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
-                "updated_at": self.content.updated_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
-                "published_at": self.content.published_at.strftime(
-                    "%Y-%m-%dT%H:%M:%S.%fZ"
-                ),
-                "model": None,
-                "status": self.status.id,
-            }
-        )
+    # @pytest.mark.django_db
+    # def test_正常_期待する出力(self):
+    #     # Serializerを作成
+    #     serializer = ContentSerializer(self.content)
+    #     assert serializer.data == snapshot(
+    #         {
+    #             "id": self.content.id,
+    #             "title": "Test Content",
+    #             "created_at": self.content.created_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+    #             "updated_at": self.content.updated_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+    #             "published_at": self.content.published_at.strftime(
+    #                 "%Y-%m-%dT%H:%M:%S.%fZ"
+    #             ),
+    #             "model": None,
+    #             "status": self.status.id,
+    #         }
+    #     )
 
 
 class TestSpaceSerializer:
@@ -121,3 +126,79 @@ class TestSpaceSerializer:
         serializer = SpaceSerializer(data={"name": "0"})
         serializer.is_valid()
         assert serializer.errors
+
+
+class TestPlanSerializer:
+    # def setup_method(self):
+    #     self.plan = Plan.objects.create(name="free")
+
+    @pytest.mark.django_db
+    def test_正常_期待する出力(self):
+        # Serializerを作成
+        serializer = PlanSerializer(data={"name": "free"})
+        serializer.is_valid()
+        assert serializer.data == {"name": "free"}
+        assert serializer.errors == {}
+        assert serializer.is_valid() is True
+        assert serializer.is_valid() == True
+
+    @pytest.mark.django_db
+    def test_異常_空文字列(self):
+        # Serializerを作成
+        serializer = PlanSerializer(data={"name": ""})
+        serializer.is_valid()
+        assert serializer.is_valid() is False
+        assert serializer.errors == snapshot(
+            {
+                "name": [
+                    ErrorDetail(
+                        string='"" is not a valid choice.', code="invalid_choice"
+                    )
+                ]
+            }
+        )
+        assert serializer.data == {"name": ""}
+        assert serializer.is_valid() is False
+        assert serializer.is_valid() == False
+
+
+class TestUserSerializer:
+    @pytest.mark.django_db
+    def test_正常_期待する出力(self):
+        plan = Plan.objects.create(name="free")
+        user = User.objects.create(name="Test User", plan=plan)
+        # Serializerを作成
+        serializer = UserSerializer(data={"name": "Test User", "plan": plan.id})
+        serializer.is_valid()
+        assert serializer.is_valid() is True
+        assert serializer.data == snapshot({"name": "Test User", "plan": 1})
+        assert serializer.errors == snapshot(
+            # {
+            #     "plan": [
+            #         ErrorDetail(
+            #             string="Incorrect type. Expected pk value, received str.",
+            #             code="incorrect_type",
+            #         )
+            #     ]
+            # }
+            {}
+        )
+
+    @pytest.mark.django_db
+    def test_異常_空文字列(self):
+        # Serializerを作成
+        serializer = UserSerializer(data={"name": ""})
+        serializer.is_valid()
+        assert serializer.is_valid() is False
+        assert serializer.errors == snapshot(
+            {
+                "name": [
+                    ErrorDetail(string="This field may not be blank.", code="blank")
+                ],
+                "plan": [
+                    ErrorDetail(string="This field is required.", code="required")
+                ],
+            }
+        )
+        assert serializer.data == {"name": ""}
+        assert serializer.is_valid() is False

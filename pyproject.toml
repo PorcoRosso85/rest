@@ -37,7 +37,9 @@ dev-dependencies = [
 test = "pytest"
 format = "black ."
 lint = "mypy ."
-snapshot = "pytest --inline-snapshot=create"
+sscreate = "pytest --inline-snapshot=create"
+ssfix = "pytest --inline-snapshot=fix"
+ssupdate = "pytest --inline-snapshot=update"
 
 [tool.hatch.metadata]
 allow-direct-references = true
