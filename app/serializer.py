@@ -177,3 +177,13 @@ class UsageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Usage
         fields = "__all__"
+
+
+class AssociateSerializer(serializers.ModelSerializer):
+    """
+    associateを返すシリアライザ
+    """
+
+    class Meta:
+        model = User
+        fields = "__all__"
