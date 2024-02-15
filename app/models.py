@@ -76,12 +76,12 @@ class User(models.Model):
     plan = models.ForeignKey(Plan, related_name="users", on_delete=models.CASCADE)
 
 
-# class Usage(models.Model):
-#     """Associateの利用状況を管理する"""
+class Usage(models.Model):
+    """Associateの利用状況を管理する"""
 
-#     data_transported = models.IntegerField()
-#     api_requested = models.IntegerField()
-#     createad_at = models.DateTimeField(auto_now_add=True)
+    data_transported = models.IntegerField()
+    api_requested = models.IntegerField()
+    createad_at = models.DateTimeField(auto_now_add=True)
 
 
 class Space(models.Model):
@@ -99,23 +99,26 @@ class Space(models.Model):
     )
 
 
-# class Associate(models.Model):
-#     """
-#     Userの所属先であり
-#     複数のSpaceを持つことができる
-#     """
+class Associate(models.Model):
+    """
+    Userの所属先であり
+    複数のSpaceを持つことができる
+    """
 
-#     id = models.AutoField(primary_key=True)
-#     info = models.CharField(max_length=100)
-#     created_at = models.DateTimeField(auto_now_add=True)
-#     updated_at = models.DateTimeField(auto_now=True)
-#     member = models.ForeignKey(
-#         User, related_name="associates", on_delete=models.CASCADE
-#     )
-#     space = models.ForeignKey(
-#         Space, related_name="associates", on_delete=models.CASCADE
-#     )
-#     plan = models.ForeignKey(Plan, related_name="associates", on_delete=models.CASCADE)
-#     usage = models.ForeignKey(
-#         Usage, related_name="associates", on_delete=models.CASCADE
-#     )
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=100)
+    icon = models.ImageField(upload_to="icon/", blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    member = models.ForeignKey(
+        User, related_name="associates", on_delete=models.CASCADE
+    )
+    space = models.ForeignKey(
+        Space, related_name="associates", on_delete=models.CASCADE, null=True
+    )
+    plan = models.ForeignKey(
+        Plan, related_name="associates", on_delete=models.CASCADE, null=True
+    )
+    usage = models.ForeignKey(
+        Usage, related_name="associates", on_delete=models.CASCADE, null=True
+    )
