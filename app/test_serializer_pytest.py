@@ -289,25 +289,18 @@ class TestSpaceSerializer:
     def test_正常_バリデーションから(self):
         logger.debug(f"content_serializer.data: {self.content_serializer.data}")
         logger.debug(f"content_serializer.data[]: {[self.content_serializer.data]}")
+        # []fixme: data.contentに入れるものが不明
+        # シリアライザにオブジェクト完成を渡せば機能するが、バリデーションを機能させられない
         serializer = SpaceSerializer(
-            data={"name": "Test Space", "content": self.content_serializer.data}
+            data={"name": "Test Space", "content": [self.content_serializer.data]}
         )
         serializer.is_valid()
         assert serializer.errors == {}
         assert serializer.is_valid() is True
 
     @pytest.mark.django_db
-    def test_zero_in_name(self):
+    def test_フィールドが拒否するバリデーションのチェック(self):
         """nameにdjango.model.charfieldが拒否する文字列を入れた場合のテスト"""
         serializer = SpaceSerializer(data={"name": "0"})
         serializer.is_valid()
         assert serializer.errors
-
-    # @pytest.mark.django_db
-    # def test_正常_バリデーション(self):
-    #     serializer = SpaceSerializer(
-    #         data={"name": "Test Space", "content": self.content}
-    #     )
-    #     serializer.is_valid()
-    #     assert serializer.errors == {}
-    #     assert serializer.is_valid() is True
