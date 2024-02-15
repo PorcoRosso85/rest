@@ -1,8 +1,9 @@
 import pytest
+from django.forms import model_to_dict
 from inline_snapshot import snapshot
 from rest_framework.exceptions import ErrorDetail
 
-from app.models import Content, Plan, Space, Status, User
+from app.models import Content, Plan, Space, Status, Usage, User
 from app.serializer import (
     PlanSerializer,
     SpaceSerializer,
@@ -10,6 +11,7 @@ from app.serializer import (
     UsageSerializer,
     UserSerializer,
 )
+from app.utils import logger
 
 
 class TestStatusModel:
@@ -73,60 +75,6 @@ class TestContentSerializer:
     #             "status": self.status.id,
     #         }
     #     )
-
-
-class TestSpaceSerializer:
-    """
-    jsonを返すシリアライザのテスト
-    jsonのうちdata[]は、ContentSerializerでテストされている
-    ContentSerializerから返されるデータをdata[]に入れてテストする
-    SpaceモデルはContentモデルと1対多の関係にある、Contentモデルを参照している
-    """
-
-    def setup_method(self):
-        self.space = Space.objects.create(name="Test Space")
-        self.status = Status.objects.create(status="draft")
-        self.content = Content.objects.create(title="Test Content", status=self.status)
-        # SpaceインスタンスにContentインスタンスを関連付け
-        self.space.content.set([self.content])
-        self.space.save()
-
-    @pytest.mark.django_db
-    def test_space_serializer(self):
-        assert self.space
-        assert self.space.name == "Test Space"
-        assert self.space.name != "Test Spac"
-
-    @pytest.mark.django_db
-    def test_space_serializer_with_content(self):
-        serializer = SpaceSerializer(self.space)
-        assert serializer.data == {
-            "id": self.space.id,
-            "content": [
-                {
-                    "id": self.content.id,
-                    "model": None,
-                    "title": "Test Content",
-                    "created_at": self.content.created_at.strftime(
-                        "%Y-%m-%dT%H:%M:%S.%fZ"
-                    ),
-                    "updated_at": self.content.updated_at.strftime(
-                        "%Y-%m-%dT%H:%M:%S.%fZ"
-                    ),
-                    "published_at": self.content.published_at.strftime(
-                        "%Y-%m-%dT%H:%M:%S.%fZ"
-                    ),
-                    "status": self.content.status.id,
-                }
-            ],
-        }
-
-    @pytest.mark.django_db
-    def test_zero_in_name(self):
-        """nameにdjango.model.charfieldが拒否する文字列を入れた場合のテスト"""
-        serializer = SpaceSerializer(data={"name": "0"})
-        serializer.is_valid()
-        assert serializer.errors
 
 
 class TestPlanSerializer:
@@ -228,7 +176,7 @@ class TestUsageSerializer:
 
     @pytest.mark.django_db
     def test_正常_期待する出力(self):
-        # usage = Usage.objects.create(data_transported=1, api_requested=1)
+        usage = Usage.objects.create(data_transported=1, api_requested=1)
         # Serializerを作成
         serializer = UsageSerializer(data={"data_transported": 1, "api_requested": 1})
         serializer.is_valid()
@@ -239,12 +187,91 @@ class TestUsageSerializer:
         serializer.save()
         # 保存後のデータを確認
         serializer_data = dict(serializer.data)
+        serializer_data.pop("id", None)
         serializer_data.pop("createad_at", None)
         assert serializer_data == snapshot(
             {
-                "id": 2,
+                # "id": usage.id | usage.id + 1,
                 "data_transported": 1,
                 "api_requested": 1,
                 # "createad_at": usage.createad_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
             }
         )
+
+
+class TestSpaceSerializer:
+    """
+    jsonを返すシリアライザのテスト
+    jsonのうちdata[]は、ContentSerializerでテストされている
+    ContentSerializerから返されるデータをdata[]に入れてテストする
+    SpaceモデルはContentモデルと1対多の関係にある、Contentモデルを参照している
+    """
+
+    def setup_method(self):
+        self.space = Space.objects.create(name="Test Space")
+        self.status = Status.objects.create(status="draft")
+        self.content = Content.objects.create(title="Test Content", status=self.status)
+        # SpaceインスタンスにContentインスタンスを関連付け
+        self.space.content.set([self.content])
+        self.space.save()
+
+    @pytest.mark.django_db
+    def test_status(self):
+        gotten_status = model_to_dict(self.space.content.all()[0].status)
+        assert gotten_status == snapshot({"id": 4, "status": "draft"})
+
+    @pytest.mark.django_db
+    def test_content(self):
+        # logger.debug(self.space.content.all()[0])
+        logger.debug(model_to_dict(self.space.content.all()[0]))
+        gotten_content = model_to_dict(self.space.content.all()[0])
+        gotten_content.pop("id", None)
+        gotten_content.pop("status", None)
+        assert gotten_content == snapshot(
+            {
+                # "id": 1,
+                "model": None,
+                "title": "Test Content",
+                # "status": 4
+            }
+        )
+
+    @pytest.mark.django_db
+    def test_正常_(self):
+        serializer = SpaceSerializer(self.space)
+        assert serializer.data == {
+            "id": self.space.id,
+            "content": [
+                {
+                    "id": self.content.id,
+                    "model": None,
+                    "title": "Test Content",
+                    "created_at": self.content.created_at.strftime(
+                        "%Y-%m-%dT%H:%M:%S.%fZ"
+                    ),
+                    "updated_at": self.content.updated_at.strftime(
+                        "%Y-%m-%dT%H:%M:%S.%fZ"
+                    ),
+                    "published_at": self.content.published_at.strftime(
+                        "%Y-%m-%dT%H:%M:%S.%fZ"
+                    ),
+                    "status": self.content.status.id,
+                }
+            ],
+        }
+
+    @pytest.mark.django_db
+    def test_zero_in_name(self):
+        """nameにdjango.model.charfieldが拒否する文字列を入れた場合のテスト"""
+        serializer = SpaceSerializer(data={"name": "0"})
+        serializer.is_valid()
+        assert serializer.errors
+
+    # @pytest.mark.django_db
+    # def test_正常_バリデーション(self):
+    #     serializer = SpaceSerializer(
+    #         data={"name": "Test Space", "content": self.content}
+    #     )
+    #     serializer.is_valid()
+    #     assert serializer.errors == {}
+    #     assert serializer.is_valid() is True

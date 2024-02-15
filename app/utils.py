@@ -16,7 +16,7 @@ log_levels = {
 for log_level, prefix in log_levels.items():
     handler = logging.StreamHandler()
     formatter = logging.Formatter(
-        f"{prefix} %(message)s"
+        f"\n {prefix} %(message)s"
     )  # プレフィックスを設定します。
     handler.setFormatter(formatter)
     handler.setLevel(log_level)
