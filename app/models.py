@@ -76,20 +76,12 @@ class User(models.Model):
     plan = models.ForeignKey(Plan, related_name="users", on_delete=models.CASCADE)
 
 
-class Associate(models.Model):
-    """
-    Userの所属先であり
-    複数のSpaceを持つことができる
-    """
+# class Usage(models.Model):
+#     """Associateの利用状況を管理する"""
 
-    id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=100)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    user = models.ForeignKey(User, related_name="associates", on_delete=models.CASCADE)
-    content = models.ForeignKey(
-        Content, related_name="associates", on_delete=models.CASCADE
-    )
+#     data_transported = models.IntegerField()
+#     api_requested = models.IntegerField()
+#     createad_at = models.DateTimeField(auto_now_add=True)
 
 
 class Space(models.Model):
@@ -102,9 +94,28 @@ class Space(models.Model):
     name = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    associate = models.ManyToManyField(
-        Associate, related_name="spaces", blank=True, null=True
-    )
     content = models.ManyToManyField(
         Content, related_name="spaces", blank=True, null=True
     )
+
+
+# class Associate(models.Model):
+#     """
+#     Userの所属先であり
+#     複数のSpaceを持つことができる
+#     """
+
+#     id = models.AutoField(primary_key=True)
+#     info = models.CharField(max_length=100)
+#     created_at = models.DateTimeField(auto_now_add=True)
+#     updated_at = models.DateTimeField(auto_now=True)
+#     member = models.ForeignKey(
+#         User, related_name="associates", on_delete=models.CASCADE
+#     )
+#     space = models.ForeignKey(
+#         Space, related_name="associates", on_delete=models.CASCADE
+#     )
+#     plan = models.ForeignKey(Plan, related_name="associates", on_delete=models.CASCADE)
+#     usage = models.ForeignKey(
+#         Usage, related_name="associates", on_delete=models.CASCADE
+#     )
