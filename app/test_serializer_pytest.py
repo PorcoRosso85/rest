@@ -7,6 +7,7 @@ from app.serializer import (
     PlanSerializer,
     SpaceSerializer,
     StatusSerializer,
+    UsageSerializer,
     UserSerializer,
 )
 
@@ -202,3 +203,48 @@ class TestUserSerializer:
         )
         assert serializer.data == {"name": ""}
         assert serializer.is_valid() is False
+
+
+class TestUsageSerializer:
+    # def setup_method(self):
+    #     self.usage = Usage.objects.create(name="Test Usage")
+
+    @pytest.mark.django_db
+    def test_異常_空文字列(self):
+        # Serializerを作成
+        serializer = UsageSerializer(data={"data_transported": "", "api_requested": ""})
+        serializer.is_valid()
+        assert serializer.errors == snapshot(
+            {
+                "data_transported": [
+                    ErrorDetail(string="A valid integer is required.", code="invalid")
+                ],
+                "api_requested": [
+                    ErrorDetail(string="A valid integer is required.", code="invalid")
+                ],
+            }
+        )
+        assert serializer
+
+    @pytest.mark.django_db
+    def test_正常_期待する出力(self):
+        # usage = Usage.objects.create(data_transported=1, api_requested=1)
+        # Serializerを作成
+        serializer = UsageSerializer(data={"data_transported": 1, "api_requested": 1})
+        serializer.is_valid()
+        assert serializer.validated_data == {"data_transported": 1, "api_requested": 1}
+        assert serializer.errors == {}
+        assert serializer.is_valid() is True
+
+        serializer.save()
+        # 保存後のデータを確認
+        serializer_data = dict(serializer.data)
+        serializer_data.pop("createad_at", None)
+        assert serializer_data == snapshot(
+            {
+                "id": 2,
+                "data_transported": 1,
+                "api_requested": 1,
+                # "createad_at": usage.createad_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+            }
+        )

@@ -2,7 +2,7 @@ import re
 
 from rest_framework import serializers
 
-from app.models import Content, Plan, Space, Status, User
+from app.models import Content, Plan, Space, Status, Usage, User
 
 
 class StatusSerializer(serializers.ModelSerializer):
@@ -166,4 +166,14 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
+        fields = "__all__"
+
+
+class UsageSerializer(serializers.ModelSerializer):
+    """
+    usageを返すシリアライザ
+    """
+
+    class Meta:
+        model = Usage
         fields = "__all__"
