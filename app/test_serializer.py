@@ -28,9 +28,9 @@ class TestDataSerializer:
     @pytest.mark.django_db
     def test_正常(self):
         data = {
-            "title": "title",
+            "_title": "title",
             "value": {"block1": {"singleline_field": "foobar", "boolean_field": True}},
-            "publishmentstatus": [{"status": "draft"}],
+            "_status": [{"status": "draft"}],
         }
         serializer = DataSerializer(data=data)
         assert serializer.is_valid(), serializer.errors
@@ -38,7 +38,7 @@ class TestDataSerializer:
         assert isinstance(
             serialized_data, dict
         ), f"Expected dict, got {type(serialized_data)}"
-        assert serialized_data["title"] == "title"
+        assert serialized_data["_title"] == "title"
         assert serialized_data["value"] == {
             "block1": {"singleline_field": "foobar", "boolean_field": True}
         }
@@ -46,9 +46,9 @@ class TestDataSerializer:
     @pytest.mark.django_db
     def test_正常_Jsonが空でも(self):
         data = {
-            "title": "title",
+            "_title": "title",
             "value": "",
-            "publishmentstatus": [{"status": "draft"}],
+            "_status": [{"status": "draft"}],
         }
         serializer = DataSerializer(data=data)
         assert serializer.is_valid() == True
@@ -56,15 +56,15 @@ class TestDataSerializer:
         assert isinstance(
             serialized_data, dict
         ), f"Expected dict, got {type(serialized_data)}"
-        assert serialized_data["title"] == "title"
+        assert serialized_data["_title"] == "title"
         assert serialized_data["value"] == ""
 
     @pytest.mark.django_db
     def test_正常_Jsonの値が不正確でも(self):
         data = {
-            "title": "title",
+            "_title": "title",
             "value": {"block1": {"singleline_field": "foobar", "boolean_field": ""}},
-            "publishmentstatus": [{"status": "draft"}],
+            "_status": [{"status": "draft"}],
         }
         serializer = DataSerializer(data=data)
         assert serializer.is_valid() == True
@@ -72,7 +72,7 @@ class TestDataSerializer:
         assert isinstance(
             serialized_data, dict
         ), f"Expected dict, got {type(serialized_data)}"
-        assert serialized_data["title"] == "title"
+        assert serialized_data["_title"] == "title"
         assert serialized_data["value"] == {
             "block1": {"singleline_field": "foobar", "boolean_field": ""}
         }
@@ -80,9 +80,9 @@ class TestDataSerializer:
     @pytest.mark.django_db
     def test_正常_publishmentstatusを含む(self):
         data = {
-            "title": "title",
+            "_title": "title",
             "value": {"block1": {"singleline_field": "foobar", "boolean_field": True}},
-            "publishmentstatus": [{"status": "draft"}],
+            "_status": [{"status": "draft"}],
         }
         serializer = DataSerializer(data=data)
         assert serializer.is_valid(), serializer.errors
@@ -91,11 +91,11 @@ class TestDataSerializer:
         assert isinstance(
             serialized_data, dict
         ), f"Expected dict, got {type(serialized_data)}"
-        assert serialized_data["title"] == "title"
+        assert serialized_data["_title"] == "title"
         assert serialized_data["value"] == {
             "block1": {"singleline_field": "foobar", "boolean_field": True}
         }
-        assert serialized_data["publishmentstatus"][0]["status"] == "draft"
+        assert serialized_data["_status"][0]["status"] == "draft"
 
 
 class TestStructureSerializer:
@@ -106,11 +106,11 @@ class TestStructureSerializer:
             "description": "description",
             "_data": [
                 {
-                    "title": "title",
+                    "_title": "title",
+                    "_status": [{"status": "draft"}],
                     "value": {
                         "block1": {"singleline_field": "foobar", "boolean_field": True}
                     },
-                    "publishmentstatus": [{"status": "draft"}],
                 }
             ],
         }
@@ -122,13 +122,14 @@ class TestStructureSerializer:
         ), f"Expected dict, got {type(serialized_data)}"
         assert serialized_data["name"] == "name"
         assert serialized_data["description"] == "description"
+        # []ここで整形を完結したい
         assert serialized_data["_data"] == [
             {
-                "title": "title",
+                "_title": "title",
                 "value": {
                     "block1": {"singleline_field": "foobar", "boolean_field": True}
                 },
-                "publishmentstatus": [{"status": "draft"}],
+                "_status": [{"status": "draft"}],
             }
         ]
 
@@ -144,14 +145,14 @@ class TestSpaceSerializer:
                     "description": "description",
                     "_data": [
                         {
-                            "title": "title",
+                            "_title": "title",
                             "value": {
                                 "block1": {
                                     "singleline_field": "foobar",
                                     "boolean_field": True,
                                 }
                             },
-                            "publishmentstatus": [{"status": "draft"}],
+                            "_status": [{"status": "draft"}],
                         }
                     ],
                 }
@@ -170,15 +171,16 @@ class TestSpaceSerializer:
                 "description": "description",
                 "_data": [
                     {
-                        "title": "title",
+                        "_title": "title",
                         "value": {
                             "block1": {
                                 "singleline_field": "foobar",
                                 "boolean_field": True,
                             }
                         },
-                        "publishmentstatus": [{"status": "draft"}],
+                        "_status": [{"status": "draft"}],
                     }
                 ],
             }
         ]
+        logger.debug(f"### serialized_data: {serialized_data}")

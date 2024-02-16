@@ -42,10 +42,10 @@ def get_default_structure() -> int:
 
 class Data(models.Model):
     id = models.AutoField(primary_key=True)
-    title = models.CharField(max_length=100)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    published_at = models.DateTimeField(auto_now=True)
+    _title = models.CharField(max_length=100)
+    _created_at = models.DateTimeField(auto_now_add=True)
+    _updated_at = models.DateTimeField(auto_now=True)
+    _published_at = models.DateTimeField(auto_now=True)
     structure = models.ForeignKey(
         Structure,
         related_name="data",
