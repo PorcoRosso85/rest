@@ -1,4 +1,42 @@
 from django.db import models
+from django.utils import timezone
+
+
+class Associate(models.Model):
+    """Userの所属先であり 複数のSpaceを持つことができる"""
+
+    PLAN_OPTIONS = [
+        ("free", "Free"),
+        ("standard", "Standard"),
+        ("premium", "Premium"),
+    ]
+
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=100)
+    icon = models.ImageField(upload_to="icon/", blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    plan = models.CharField(max_length=100, choices=PLAN_OPTIONS, default="free")
+    plan_created_at = models.DateTimeField(default=timezone.now)
+    plan_updated_at = models.DateTimeField(default=timezone.now)
+
+
+def get_default_associate() -> int:
+    associate = Associate.objects.first()
+    if associate:
+        return associate.id
+    new_associate = Associate.objects.create()
+    return new_associate.id
+
+
+class User(models.Model):
+    """Userの情報を管理する"""
+
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    associate = models.ManyToManyField(Associate, related_name="users")  # type: ignore
 
 
 class Space(models.Model):
@@ -6,6 +44,12 @@ class Space(models.Model):
     name = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    associate = models.ForeignKey(
+        Associate,
+        related_name="spaces",
+        on_delete=models.CASCADE,
+        default=get_default_associate,  # type: ignore
+    )
 
 
 def get_default_space() -> int:
@@ -14,6 +58,42 @@ def get_default_space() -> int:
         return space.id
     new_space = Space.objects.create()
     return new_space.id
+
+
+class ApiKeys(models.Model):
+    """発行したAPIキーを管理する"""
+
+    id = models.AutoField(primary_key=True)
+    key = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    space = models.ForeignKey(
+        Space,
+        related_name="api_keys",
+        on_delete=models.CASCADE,
+        default=get_default_space,  # type: ignore
+    )
+
+
+def get_default_api_key() -> int:
+    api_key = ApiKeys.objects.first()
+    if api_key:
+        return api_key.id
+    new_api_key = ApiKeys.objects.create()
+    return new_api_key.id
+
+
+class Access(models.Model):
+    """Associateの利用状況を管理する"""
+
+    id = models.AutoField(primary_key=True)
+    createad_at = models.DateTimeField(auto_now_add=True)
+    api_key = models.ForeignKey(
+        ApiKeys,
+        related_name="access",
+        on_delete=models.CASCADE,
+        default=get_default_api_key,  # type: ignore
+    )
 
 
 class Structure(models.Model):
@@ -79,60 +159,3 @@ class PublishmentStatus(models.Model):
         default=get_default_data,  # type: ignore
     )
     updated_at = models.DateTimeField(auto_now=True)
-
-
-class Plan(models.Model):
-    """
-    Userのプランを管理する
-    'free', 'standard', 'premium'
-    """
-
-    PLAN_OPTIONS = [
-        ("free", "Free"),
-        ("standard", "Standard"),
-        ("premium", "Premium"),
-    ]
-
-    name = models.CharField(max_length=100, choices=PLAN_OPTIONS)
-
-
-class User(models.Model):
-    """
-    Userの情報を管理する
-    """
-
-    id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=100)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    plan = models.ForeignKey(Plan, related_name="users", on_delete=models.CASCADE)
-
-
-class Usage(models.Model):
-    """Associateの利用状況を管理する"""
-
-    data_transported = models.IntegerField()
-    api_requested = models.IntegerField()
-    createad_at = models.DateTimeField(auto_now_add=True)
-
-
-class Associate(models.Model):
-    """
-    Userの所属先であり
-    複数のSpaceを持つことができる
-    """
-
-    id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=100)
-    icon = models.ImageField(upload_to="icon/", blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    member = models.ForeignKey(
-        User, related_name="associates", on_delete=models.CASCADE
-    )
-    space = models.ForeignKey(
-        Space, related_name="associates", on_delete=models.CASCADE, null=True
-    )
-    usage = models.ForeignKey(
-        Usage, related_name="associates", on_delete=models.CASCADE, null=True
-    )
