@@ -15,7 +15,6 @@ class PublishmentStatusSerializer(serializers.ModelSerializer):
         model = PublishmentStatus
         fields = ["status"]
 
-    # []型
     def validate(self, attrs: AttrsType) -> AttrsType:
         if attrs["status"] == "":
             raise serializers.ValidationError("status is required")
@@ -27,6 +26,7 @@ class DataSerializer(serializers.ModelSerializer):
 
     # PublishmentStatusモデル側で外部キーを指定しているため、many=Trueを指定する
     _status = PublishmentStatusSerializer(many=True)
+    structure = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
         model = Data
@@ -36,6 +36,10 @@ class DataSerializer(serializers.ModelSerializer):
 class StructureSerializer(serializers.ModelSerializer):
     """structureを返すシリアライザ"""
 
+    # []todo
+    # total: _dataの総数
+    # offset
+    # limit
     _data = DataSerializer(many=True)
 
     class Meta:
