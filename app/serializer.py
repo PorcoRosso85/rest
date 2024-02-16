@@ -1,26 +1,30 @@
 import re
+from typing import Any, Dict, TypeAlias
 
 from rest_framework import serializers
 
-from app.models import Associate, Content, Plan, Space, Status, Usage, User
+from app.models import Data, PublishmentStatus, Space, Structure
+
+AttrsType: TypeAlias = Dict[str, Any]
 
 
-class StatusSerializer(serializers.ModelSerializer):
+class PublishmentStatusSerializer(serializers.ModelSerializer):
     """
     statusを返すシリアライザ
     """
 
     class Meta:
-        model = Status
+        model = PublishmentStatus
         fields = ["status"]
 
-    def validate(self, data):
-        if data["status"] == "":
+    # []型
+    def validate(self, attrs: AttrsType) -> AttrsType:
+        if attrs["status"] == "":
             raise serializers.ValidationError("status is required")
-        return data
+        return attrs
 
 
-class ContentSerializer(serializers.ModelSerializer):
+class DataSerializer(serializers.ModelSerializer):
     """
     dataを返すシリアライザ
 
@@ -107,8 +111,19 @@ class ContentSerializer(serializers.ModelSerializer):
     ]
     """
 
+    # PublishmentStatusモデル側で外部キーを指定しているため、many=Trueを指定する
+    publishmentstatus = PublishmentStatusSerializer(many=True)
+
     class Meta:
-        model = Content
+        model = Data
+        fields = "__all__"
+
+
+class StructureSerializer(serializers.ModelSerializer):
+    """structureを返すシリアライザ"""
+
+    class Meta:
+        model = Structure
         fields = "__all__"
 
 
@@ -128,62 +143,62 @@ class SpaceSerializer(serializers.ModelSerializer):
     ```
     """
 
-    content = ContentSerializer(read_only=True, many=True)
+    data_serializer = DataSerializer(many=True)
 
     class Meta:
         model = Space
         fields = "id", "content"
 
-    def validate(self, data):
-        if "content" not in data or not data["content"]:
+    def validate(self, attrs: AttrsType) -> AttrsType:
+        if "content" not in attrs or not attrs["content"]:
             raise serializers.ValidationError("content is required")
         # django.model.charfieldが許容できない文字列を拒否する
-        if re.match(r"^\d+$", data["name"]):
+        if re.match(r"^\d+$", attrs["name"]):
             raise serializers.ValidationError("name is invalid")
-        return data
+        return attrs
 
 
-class PlanSerializer(serializers.ModelSerializer):
-    """
-    planを返すシリアライザ
-    """
+# class PlanSerializer(serializers.ModelSerializer):
+#     """
+#     planを返すシリアライザ
+#     """
 
-    class Meta:
-        model = Plan
-        fields = "__all__"
+#     class Meta:
+#         model = Plan
+#         fields = "__all__"
 
-    def validate(self, data):
-        # free, standard, premiumのいずれかでない場合はエラー
-        if data["name"] not in ["free", "standard", "premium"]:
-            raise serializers.ValidationError("plan is invalid")
-        return data
-
-
-class UserSerializer(serializers.ModelSerializer):
-    """
-    userを返すシリアライザ
-    """
-
-    class Meta:
-        model = User
-        fields = "__all__"
+#     def validate(self, data):
+#         # free, standard, premiumのいずれかでない場合はエラー
+#         if data["name"] not in ["free", "standard", "premium"]:
+#             raise serializers.ValidationError("plan is invalid")
+#         return data
 
 
-class UsageSerializer(serializers.ModelSerializer):
-    """
-    usageを返すシリアライザ
-    """
+# class UserSerializer(serializers.ModelSerializer):
+#     """
+#     userを返すシリアライザ
+#     """
 
-    class Meta:
-        model = Usage
-        fields = "__all__"
+#     class Meta:
+#         model = User
+#         fields = "__all__"
 
 
-class AssociateSerializer(serializers.ModelSerializer):
-    """
-    associateを返すシリアライザ
-    """
+# class UsageSerializer(serializers.ModelSerializer):
+#     """
+#     usageを返すシリアライザ
+#     """
 
-    class Meta:
-        model = Associate
-        fields = "__all__"
+#     class Meta:
+#         model = Usage
+#         fields = "__all__"
+
+
+# class AssociateSerializer(serializers.ModelSerializer):
+#     """
+#     associateを返すシリアライザ
+#     """
+
+#     class Meta:
+#         model = Associate
+#         fields = "__all__"

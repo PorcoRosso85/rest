@@ -1,6 +1,21 @@
 from django.db import models
 
 
+class Space(models.Model):
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
+def get_default_space() -> int:
+    space = Space.objects.first()
+    if space:
+        return space.id
+    new_space = Space.objects.create()
+    return new_space.id
+
+
 class Structure(models.Model):
     """userが作成した構造(モデルと呼ばれる)を管理する"""
 
@@ -9,20 +24,46 @@ class Structure(models.Model):
     description = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    space = models.ForeignKey(
+        Space,
+        related_name="structures",
+        on_delete=models.CASCADE,
+        default=get_default_space,  # type: ignore
+    )
 
 
-"""
-draft, review, published, archived
-StatusモデルのstatusフィールドはCharFieldで、choicesパラメータが設定されていますが、blank=Falseやnull=Falseといった制約が明示的に設定されていないため、空文字列("")を許容します。
-DjangoのCharFieldはデフォルトでblank=False、null=Falseですが、これはデータベースレベルの制約であり、Pythonコードから直接モデルを操作する場合（例えばテストコードなど）は適用されません。Pythonコードから直接操作する場合、DjangoはCharFieldに対して空文字列を許容します。
-statusフィールドに空文字列("")を許容しないようにするには、モデル定義でblank=Falseとnull=Falseを明示的に設定する必要があります。ただし、CharFieldに対してnull=Trueを設定することは推奨されません。空の値を表現するためには空文字列を使用するべきです。
-また、choicesパラメータはフォームのバリデーション時にのみ適用され、モデルを直接操作する場合には適用されません。したがって、statusフィールドにchoicesで定義されていない値を設定することが可能です。
-これらの制約を適用したい場合は、モデルのcleanメソッドをオーバーライドして、statusフィールドの値がSTATUS_OPTIONSに含まれるかどうかをチェックすることができます。
-これは、DjangoのCharFieldがPythonレベルでは空文字列（""）を許容するためです。blank=Falseはフォームバリデーションに影響し、null=Falseはデータベースレベルの制約です。しかし、これらの制約はPythonコードから直接モデルを操作する場合には適用されません。
-"""
+def get_default_structure() -> int:
+    structure = Structure.objects.first()
+    if structure:
+        return structure.id
+    new_structure = Structure.objects.create()
+    return new_structure.id
 
 
-class Status(models.Model):
+class Data(models.Model):
+    id = models.AutoField(primary_key=True)
+    title = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    published_at = models.DateTimeField(auto_now=True)
+    structure = models.ForeignKey(
+        Structure,
+        related_name="data",
+        on_delete=models.CASCADE,
+        default=get_default_structure,  # type: ignore
+    )
+    value = models.JSONField(default=dict)  # type: ignore
+
+
+def get_default_data() -> int:
+    data = Data.objects.first()
+    if data:
+        return data.id
+    new_data = Data.objects.create()
+    return new_data.id
+
+
+class PublishmentStatus(models.Model):
     STATUS_OPTIONS = [
         ("draft", "Draft"),
         ("review", "Review"),
@@ -30,23 +71,14 @@ class Status(models.Model):
         ("archived", "Archived"),
     ]
 
-    status = models.CharField(
-        max_length=100, choices=STATUS_OPTIONS, blank=False, null=False
+    status = models.CharField(max_length=100, choices=STATUS_OPTIONS, default="draft")
+    data = models.ForeignKey(
+        Data,
+        related_name="status",
+        on_delete=models.CASCADE,
+        default=get_default_data,  # type: ignore
     )
-
-
-class Content(models.Model):
-    id = models.AutoField(primary_key=True)
-    model = models.ForeignKey(
-        Structure, related_name="contents", on_delete=models.CASCADE, null=True
-    )
-    title = models.CharField(max_length=100)
-    created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    published_at = models.DateTimeField(auto_now=True)
-    status = models.ForeignKey(
-        Status, related_name="contents", on_delete=models.CASCADE, default=1
-    )
 
 
 class Plan(models.Model):
@@ -82,21 +114,6 @@ class Usage(models.Model):
     data_transported = models.IntegerField()
     api_requested = models.IntegerField()
     createad_at = models.DateTimeField(auto_now_add=True)
-
-
-class Space(models.Model):
-    """
-    どのAssosiatesがどのContentを持っているかを管理する
-    AssosiatesとContentの中間テーブル
-    """
-
-    id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=100)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    content = models.ManyToManyField(
-        Content, related_name="spaces", blank=True, null=True
-    )
 
 
 class Associate(models.Model):
