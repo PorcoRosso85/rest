@@ -34,6 +34,9 @@ class TestDataSerializer:
         serializer = DataSerializer(data=data)
         assert serializer.is_valid(), serializer.errors
         serialized_data = serializer.data
+        assert isinstance(
+            serialized_data, dict
+        ), f"Expected dict, got {type(serialized_data)}"
         assert serialized_data["title"] == "title"
         assert serialized_data["value"] == {
             "block1": {"singleline_field": "foobar", "boolean_field": True}
@@ -49,6 +52,9 @@ class TestDataSerializer:
         serializer = DataSerializer(data=data)
         assert serializer.is_valid() == True
         serialized_data = serializer.data
+        assert isinstance(
+            serialized_data, dict
+        ), f"Expected dict, got {type(serialized_data)}"
         assert serialized_data["title"] == "title"
         assert serialized_data["value"] == ""
 
@@ -62,6 +68,9 @@ class TestDataSerializer:
         serializer = DataSerializer(data=data)
         assert serializer.is_valid() == True
         serialized_data = serializer.data
+        assert isinstance(
+            serialized_data, dict
+        ), f"Expected dict, got {type(serialized_data)}"
         assert serialized_data["title"] == "title"
         assert serialized_data["value"] == {
             "block1": {"singleline_field": "foobar", "boolean_field": ""}
@@ -76,13 +85,16 @@ class TestDataSerializer:
         }
         serializer = DataSerializer(data=data)
         assert serializer.is_valid(), serializer.errors
-        data = serializer.data
+        serialized_data = serializer.data
         logger.debug(f"### data: {data}")
-        assert data["title"] == "title"
-        assert data["value"] == {
+        assert isinstance(
+            serialized_data, dict
+        ), f"Expected dict, got {type(serialized_data)}"
+        assert serialized_data["title"] == "title"
+        assert serialized_data["value"] == {
             "block1": {"singleline_field": "foobar", "boolean_field": True}
         }
-        assert data["publishmentstatus"][0]["status"] == "draft"
+        assert serialized_data["publishmentstatus"][0]["status"] == "draft"
 
 
 class TestStructureSerializer:
