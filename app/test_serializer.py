@@ -3,6 +3,7 @@ import pytest
 from app.serializer import (
     DataSerializer,
     PublishmentStatusSerializer,
+    SpaceSerializer,
     StructureSerializer,
 )
 from app.utils import logger
@@ -103,7 +104,15 @@ class TestStructureSerializer:
         data = {
             "name": "name",
             "description": "description",
-            "_data": [],
+            "_data": [
+                {
+                    "title": "title",
+                    "value": {
+                        "block1": {"singleline_field": "foobar", "boolean_field": True}
+                    },
+                    "publishmentstatus": [{"status": "draft"}],
+                }
+            ],
         }
         serializer = StructureSerializer(data=data)
         assert serializer.is_valid(), serializer.errors
@@ -113,15 +122,63 @@ class TestStructureSerializer:
         ), f"Expected dict, got {type(serialized_data)}"
         assert serialized_data["name"] == "name"
         assert serialized_data["description"] == "description"
-        assert serialized_data["_data"] == []
+        assert serialized_data["_data"] == [
+            {
+                "title": "title",
+                "value": {
+                    "block1": {"singleline_field": "foobar", "boolean_field": True}
+                },
+                "publishmentstatus": [{"status": "draft"}],
+            }
+        ]
 
 
-# class TestSpaceSerializer:
-#     @pytest.mark.django_db
-#     def test_正常(self):
-#         data = {
-#             "name": "name",
-#         }
-#         serializer = SpaceSerializer(data=data)
-#         assert serializer.is_valid() == True
-#         assert serializer.errors == {}
+class TestSpaceSerializer:
+    @pytest.mark.django_db
+    def test_正常(self):
+        data = {
+            "name": "name",
+            "structures": [
+                {
+                    "name": "name",
+                    "description": "description",
+                    "_data": [
+                        {
+                            "title": "title",
+                            "value": {
+                                "block1": {
+                                    "singleline_field": "foobar",
+                                    "boolean_field": True,
+                                }
+                            },
+                            "publishmentstatus": [{"status": "draft"}],
+                        }
+                    ],
+                }
+            ],
+        }
+        serializer = SpaceSerializer(data=data)
+        assert serializer.is_valid(), serializer.errors
+        serialized_data = serializer.data
+        assert isinstance(
+            serialized_data, dict
+        ), f"Expected dict, got {type(serialized_data)}"
+        assert serialized_data["name"] == "name"
+        assert serialized_data["structures"] == [
+            {
+                "name": "name",
+                "description": "description",
+                "_data": [
+                    {
+                        "title": "title",
+                        "value": {
+                            "block1": {
+                                "singleline_field": "foobar",
+                                "boolean_field": True,
+                            }
+                        },
+                        "publishmentstatus": [{"status": "draft"}],
+                    }
+                ],
+            }
+        ]
