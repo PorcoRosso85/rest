@@ -1,19 +1,20 @@
 import pytest
 from inline_snapshot import snapshot
 
+from app.models import Access, ApiKeys
 from app.serializer import (
+    AccessSerializer,
+    ApiKeysSerializer,
     DataSerializer,
     PublishmentStatusSerializer,
     StructureSerializer,
 )
-from app.utils import logger
 
 
 class TestPublishmentStatusSerializer:
     @pytest.mark.django_db
     def test_validate(self):
         data = {"status": "published"}
-        logger.info(data)
         serializer = PublishmentStatusSerializer(data=data)
         assert serializer.is_valid() == True
 
@@ -142,6 +143,65 @@ class TestStructureSerializer:
                 }
             ]
         )
+
+
+class TestAccessSerializer:
+    @pytest.mark.django_db
+    def test_正常(self):
+        data = {
+            # "api_key": 1,
+        }
+        serializer = AccessSerializer(data=data)
+        assert serializer.is_valid(), serializer.errors
+        serialized_data = serializer.data
+        assert isinstance(
+            serialized_data, dict
+        ), f"Expected dict, got {type(serialized_data)}"
+        # assert serialized_data["api_key"] == "api_key"
+
+    @pytest.mark.django_db
+    def test_アクセスインスタンスのシリアライズ(self):
+        access = Access.objects.create()
+        serializer = AccessSerializer(access)
+        data = serializer.data
+        assert data["id"] == access.id
+        assert data["api_key"] == access.api_key.id
+
+    @pytest.mark.django_db
+    def test_不正なデータのエラーハンドリング(self):
+        data = {"api_key": 9999}  # 存在しないAPIキー
+        serializer = AccessSerializer(data=data)
+        assert not serializer.is_valid()
+        assert "api_key" in serializer.errors
+
+
+class TestApiKeysSerializer:
+    @pytest.mark.django_db
+    def test_ApiKeysインスタンスのシリアライズ(self):
+        api_key = ApiKeys.objects.create()
+        serializer = ApiKeysSerializer(api_key)
+        data = serializer.data
+        assert data["id"] == api_key.id
+        assert data["key"] == str(api_key.key)
+
+    @pytest.mark.django_db
+    def test_不正なデータのエラーハンドリング(self):
+        ApiKeys.objects.create(key="test_key")
+        data = {"key": "test_key"}  # 重複したキー
+        serializer = ApiKeysSerializer(data=data)
+        assert not serializer.is_valid()
+        assert "key" in serializer.errors
+
+    @pytest.mark.django_db
+    def test_正常(self):
+        data = {}
+        serializer = ApiKeysSerializer(data=data)
+        assert serializer.is_valid(), serializer.errors
+        serialized_data = serializer.data
+        assert isinstance(
+            serialized_data, dict
+        ), f"Expected dict, got {type(serialized_data)}"
+        # assert serialized_data["api_key"] == "api_key"
 
 
 # class TestSpaceSerializer:

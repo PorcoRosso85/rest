@@ -3,7 +3,7 @@ from typing import Any, Dict, TypeAlias
 
 from rest_framework import serializers
 
-from app.models import Data, PublishmentStatus, Space, Structure
+from app.models import Access, ApiKeys, Data, PublishmentStatus, Space, Structure
 
 AttrsType: TypeAlias = Dict[str, Any]
 
@@ -13,7 +13,7 @@ class PublishmentStatusSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PublishmentStatus
-        fields = ["status"]
+        fields = "__all__"
 
     def validate(self, attrs: AttrsType) -> AttrsType:
         if attrs["status"] == "":
@@ -44,6 +44,22 @@ class StructureSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Structure
+        fields = "__all__"
+
+
+class AccessSerializer(serializers.ModelSerializer):
+    """accessを返すシリアライザ"""
+
+    class Meta:
+        model = Access
+        fields = "__all__"
+
+
+class ApiKeysSerializer(serializers.ModelSerializer):
+    """api_keyを返すシリアライザ"""
+
+    class Meta:
+        model = ApiKeys
         fields = "__all__"
 
 
