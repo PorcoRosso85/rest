@@ -122,6 +122,8 @@ class DataSerializer(serializers.ModelSerializer):
 class StructureSerializer(serializers.ModelSerializer):
     """structureを返すシリアライザ"""
 
+    _data = DataSerializer(many=True)
+
     class Meta:
         model = Structure
         fields = "__all__"

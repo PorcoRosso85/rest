@@ -86,7 +86,7 @@ class TestDataSerializer:
         serializer = DataSerializer(data=data)
         assert serializer.is_valid(), serializer.errors
         serialized_data = serializer.data
-        logger.debug(f"### data: {data}")
+        # logger.debug(f"### data: {data}")
         assert isinstance(
             serialized_data, dict
         ), f"Expected dict, got {type(serialized_data)}"
@@ -103,10 +103,17 @@ class TestStructureSerializer:
         data = {
             "name": "name",
             "description": "description",
+            "_data": [],
         }
         serializer = StructureSerializer(data=data)
-        assert serializer.is_valid() == True
-        assert serializer.errors == {}
+        assert serializer.is_valid(), serializer.errors
+        serialized_data = serializer.data
+        assert isinstance(
+            serialized_data, dict
+        ), f"Expected dict, got {type(serialized_data)}"
+        assert serialized_data["name"] == "name"
+        assert serialized_data["description"] == "description"
+        assert serialized_data["_data"] == []
 
 
 # class TestSpaceSerializer:
