@@ -1,6 +1,6 @@
 import pytest
 
-from app.models import Access, ApiKeys, Space, Structure
+from app.models import Access, ApiKeys, Associate, Space, Structure, User
 
 
 class TestApiKeysModel:
@@ -142,3 +142,86 @@ class TestSpaceModel:
             structure.id for structure in fixture_space_one.structures.all()
         ]
         assert sorted(actual_structure_ids) == sorted(expected_structure_ids)
+
+
+class TestAssociateModel:
+    @pytest.mark.django_db
+    def test_正常系_クエリが成功する場合(self):
+        """クエリが成功する場合"""
+        associate = Associate.objects.create()
+        assert associate.id is not None
+
+    @pytest.mark.django_db
+    def test_正常系_関連するspaceを取得する場合(self):
+        """関連するspaceを取得する場合"""
+        associate = Associate.objects.create()
+        space = Space.objects.create(associate=associate)
+        assert associate.spaces.first().id == space.id
+
+    @pytest.mark.django_db
+    def test_正常系_関連するspaceとapi_keyを取得する場合(self):
+        """関連するspaceとapi_keyを取得する場合"""
+        associate = Associate.objects.create()
+        space = Space.objects.create(associate=associate)
+        api_key = ApiKeys.objects.create(space=space)
+        assert associate.spaces.first().api_keys.first().id == api_key.id
+        assert associate.spaces.first().api_keys.first().space.id == space.id
+
+    @pytest.mark.django_db
+    def test_正常系_関連するspaceとapi_keyとaccessを取得する場合(self):
+        """関連するspaceとapi_keyとaccessを取得する場合
+        Associate
+           |
+          (associate)
+           |
+           Space
+              |
+            (space)
+              |
+           ApiKeys
+              |
+            (api_key)
+              |
+             Access
+                |
+              (access)
+        """
+        associate = Associate.objects.create()
+        space = Space.objects.create(associate=associate)
+        api_key = ApiKeys.objects.create(space=space)
+        access = Access.objects.create(api_key=api_key)
+        assert associate.spaces.first().api_keys.first().access.first().id == access.id
+        assert (
+            associate.spaces.first().api_keys.first().access.first().api_key.id
+            == api_key.id
+        )
+        assert (
+            associate.spaces.first().api_keys.first().access.first().api_key.space.id
+            == space.id
+        )
+
+
+class TestUserModel:
+    @pytest.mark.django_db
+    def test_正常系_クエリが成功する場合(self):
+        """クエリが成功する場合"""
+        user = User.objects.create()
+        assert user.id is not None
+
+    @pytest.mark.django_db
+    def test_正常系_関連するassociateを取得する場合(self):
+        """関連するassociateを取得する場合"""
+        user = User.objects.create()
+        associate = Associate.objects.create()
+        user.associates.add(associate)
+        assert user.associates.first().id == associate.id
+
+    @pytest.mark.django_db
+    def test_正常系_関連するassociateとspaceを取得する場合(self):
+        """関連するassociateとspaceを取得する場合"""
+        user = User.objects.create()
+        associate = Associate.objects.create()
+        space = Space.objects.create(associate=associate)
+        user.associates.add(associate)
+        assert user.associates.first().spaces.first().id == space.id
+        assert user.associates.first().spaces.first().associate.id == associate.id

@@ -4,6 +4,15 @@ from django.db import models
 from django.utils import timezone
 
 
+class User(models.Model):
+    """Userの情報を管理する"""
+
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
 class Associate(models.Model):
     """Userの所属先であり 複数のSpaceを持つことができる"""
 
@@ -21,6 +30,7 @@ class Associate(models.Model):
     plan = models.CharField(max_length=100, choices=PLAN_OPTIONS, default="free")
     plan_created_at = models.DateTimeField(default=timezone.now)
     plan_updated_at = models.DateTimeField(default=timezone.now)
+    user = models.ManyToManyField(User, related_name="associates")
 
 
 def get_default_associate() -> int:
@@ -29,16 +39,6 @@ def get_default_associate() -> int:
         return associate.id
     new_associate = Associate.objects.create()
     return new_associate.id
-
-
-class User(models.Model):
-    """Userの情報を管理する"""
-
-    id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=100)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    associate = models.ManyToManyField(Associate, related_name="users")  # type: ignore
 
 
 class Space(models.Model):
