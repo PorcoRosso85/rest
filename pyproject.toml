@@ -10,6 +10,7 @@ dependencies = [
     "inline-snapshot>=0.6.1",
     "hypothesis>=6.98.4",
     "Pillow>=10.2.0",
+    "pydeps>=1.12.18",
 ]
 readme = "README.md"
 requires-python = ">= 3.12"
