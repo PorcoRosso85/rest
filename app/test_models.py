@@ -1,4 +1,5 @@
 import pytest
+from inline_snapshot import snapshot
 
 from app.models import (
     Access,
@@ -265,3 +266,5 @@ class TestFieldModel:
         data = Data.objects.create()
         model = FieldModel.objects.create(data=data, model={"test": "test"})
         assert model.model == {"test": "test"}
+        model = FieldModel.objects.create(model={"1": {"2": {"3": [1, 2, 3]}}})
+        assert model.model == snapshot({"1": {"2": {"3": [1, 2, 3]}}})
