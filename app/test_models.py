@@ -6,7 +6,6 @@ from app.models import (
     ApiKeys,
     Associate,
     Data,
-    FieldModel,
     Space,
     Structure,
     User,
@@ -260,11 +259,8 @@ class TestUserModel:
         assert user3.associates.first().api_keys.first().id == api_key2.id
 
 
-class TestFieldModel:
+class TestDataModel:
     @pytest.mark.django_db
     def test_modelフィールドにはJson形式のデータを保存できる(self):
-        data = Data.objects.create()
-        model = FieldModel.objects.create(data=data, model={"test": "test"})
-        assert model.model == {"test": "test"}
-        model = FieldModel.objects.create(model={"1": {"2": {"3": [1, 2, 3]}}})
-        assert model.model == snapshot({"1": {"2": {"3": [1, 2, 3]}}})
+        data = Data.objects.create(_model={"1": {"2": {"3": [1, 2, 3]}}})
+        assert data._model == snapshot({"1": {"2": {"3": [1, 2, 3]}}})

@@ -139,6 +139,7 @@ class Data(models.Model):
         default=get_default_structure,  # type: ignore
     )
     value = models.JSONField(default=dict)  # type: ignore
+    _model = models.JSONField(default=dict)  # type: ignore
 
 
 def get_default_data() -> int:
@@ -147,16 +148,6 @@ def get_default_data() -> int:
         return data.id
     new_data = Data.objects.create()
     return new_data.id
-
-
-class FieldModel(models.Model):
-    model = models.JSONField(default=dict)  # type: ignore
-    data = models.ForeignKey(
-        Data,
-        related_name="model",
-        on_delete=models.CASCADE,
-        default=get_default_data,  # type: ignore
-    )
 
 
 class PublishmentStatus(models.Model):
