@@ -225,3 +225,49 @@ class TestUserModel:
         user.associates.add(associate)
         assert user.associates.first().spaces.first().id == space.id
         assert user.associates.first().spaces.first().associate.id == associate.id
+
+    @pytest.mark.django_db
+    def test_正常系_関連するassociateとspaceとapi_keyを取得する場合(self):
+        """関連するassociateとspaceとapi_keyを取得する場合
+        user[1, 2]が同じassociate[1]に所属している
+        """
+        user1 = User.objects.create()
+        user2 = User.objects.create()
+        associate = Associate.objects.create()
+        space = Space.objects.create(associate=associate)
+        api_key = ApiKeys.objects.create(space=space)
+        user1.associates.add(associate)
+        user2.associates.add(associate)
+        assert (
+            user1.associates.first().spaces.first().api_keys.first().id
+            == user2.associates.first().spaces.first().api_keys.first().id
+        )
+
+    @pytest.mark.django_db
+    def test_正常系_関連するassociateとspaceとapi_keyを取得する場合(self):
+        """関連するassociateとspaceとapi_keyを取得する場合
+        user[1, 2]が同じassociate[1]に所属している
+        user[3]は異なるassociate[2]に所属している
+        """
+        user1 = User.objects.create()
+        user2 = User.objects.create()
+        user3 = User.objects.create()
+        associate1 = Associate.objects.create()
+        associate2 = Associate.objects.create()
+        space = Space.objects.create(associate=associate1)
+        api_key = ApiKeys.objects.create(space=space)
+        user1.associates.add(associate1)
+        user2.associates.add(associate1)
+        user3.associates.add(associate2)
+
+        # user1とuser2が同じassociate1に所属していることを検証
+        assert user1.associates.first().spaces.first().api_keys.first().id == api_key.id
+        assert user2.associates.first().spaces.first().api_keys.first().id == api_key.id
+
+        # user3が異なるassociate2に所属していることを検証
+        assert user3.associates.first().id == associate2.id
+        assert not user3.associates.first().spaces.exists()
+
+        # user1とuser2が同じassociate1に所属していることを再確認
+        assert user1.associates.first().id == associate1.id
+        assert user2.associates.first().id == associate1.id
