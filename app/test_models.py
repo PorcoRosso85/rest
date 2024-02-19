@@ -86,3 +86,59 @@ class TestSpaceModel:
             # logger.debug(f"### space: {space}")
             # logger.debug(f"### unrelated_structure[i]: {unrelated_structure[i]}")
             assert list(space.structures.all()) != [unrelated_structure[i]]
+
+    # 関連するstructureが複数ある場合に正しく取得できるかを確認する
+    @pytest.fixture
+    def fixture_related_structure(self, fixture_space: list[Space]) -> list[Structure]:
+        # spaceに関連するstructureを作成する
+        return [Structure.objects.create(space=space) for space in fixture_space]
+
+    @pytest.fixture
+    def fixture_related_structures(
+        self, fixture_space: list[Space]
+    ) -> list[list[Structure]]:
+        # 各spaceに関連する複数のstructureを作成する
+        structures = []
+        for space in fixture_space:
+            structures_for_space = [
+                Structure.objects.create(space=space) for _ in range(2)
+            ]  # 各Spaceに2つのStructureを関連付ける
+            structures.append(structures_for_space)
+        return structures
+
+    @pytest.mark.django_db
+    def test_正常系_関連するstructureが複数ある場合に正しく取得できるかを確認する(
+        self, fixture_space, fixture_related_structures
+    ):
+        """関連するstructureが複数ある場合に正しく取得できるかを確認する"""
+        for i, space in enumerate(fixture_space):
+            expected_structures = fixture_related_structures[i]
+            actual_structures = list(space.structures.all())
+            assert sorted(actual_structures, key=lambda s: s.id) == sorted(
+                expected_structures, key=lambda s: s.id
+            )
+
+    @pytest.fixture
+    def fixture_space_one(self) -> Space:
+        return Space.objects.create(id=9)
+
+    @pytest.fixture
+    def fixture_structures_for_space_one(
+        self, fixture_space_one: Space
+    ) -> list[Structure]:
+        structure_ids = [9, 8, 7]
+        return [
+            Structure.objects.create(id=id, space=fixture_space_one)
+            for id in structure_ids
+        ]
+
+    @pytest.mark.django_db
+    def test_正常系_関連するstructureが複数ある場合に正しく取得できるかを確認する_for_space_one(
+        self, fixture_space_one, fixture_structures_for_space_one
+    ):
+        """関連するstructureが複数ある場合に正しく取得できるかを確認する"""
+        expected_structure_ids = [9, 8, 7]
+        actual_structure_ids = [
+            structure.id for structure in fixture_space_one.structures.all()
+        ]
+        assert sorted(actual_structure_ids) == sorted(expected_structure_ids)
