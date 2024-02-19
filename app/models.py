@@ -66,18 +66,18 @@ class ApiKeys(models.Model):
     """発行したAPIキーを管理する"""
 
     id = models.AutoField(primary_key=True)
-    key = models.CharField(
+    api_key = models.CharField(
         max_length=100,
         default=uuid.uuid4,  # type: ignore
         unique=True,
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    space = models.ForeignKey(
-        Space,
+    associate = models.ForeignKey(
+        Associate,
         related_name="api_keys",
         on_delete=models.CASCADE,
-        default=get_default_space,  # type: ignore
+        default=get_default_associate,  # type: ignore
     )
 
 
