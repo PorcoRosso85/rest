@@ -1,6 +1,6 @@
 import pytest
 
-from app.models import Access, ApiKeys
+from app.models import Access, ApiKeys, Space, Structure
 
 
 class TestApiKeysModel:
@@ -29,3 +29,60 @@ class TestAccessModel:
         ApiKeys.objects.all().delete()
         access = Access.objects.create()
         assert access.api_key is not None
+
+
+class TestStructureModel:
+    @pytest.mark.django_db
+    def test_正常系_クエリが成功する場合(self):
+        """クエリが成功する場合"""
+        space = Space.objects.create()
+        structure = Structure.objects.create(space=space)
+        assert structure.space.id == space.id
+
+
+class TestSpaceModel:
+    @pytest.mark.django_db
+    def test_正常系_クエリが成功する場合(self):
+        """クエリが成功する場合"""
+        space = Space.objects.create()
+        assert space.id is not None
+
+    @pytest.mark.django_db
+    def test_正常系_Structureモデルを取得する場合(self):
+        """Structureモデルを取得する場合"""
+        space = Space.objects.create()
+        structure = Structure.objects.create(space=space)
+        assert space.structures.first().id == structure.id
+
+    # structureが関連するspaceのためのstructure.idを返せているかを確認する
+    @pytest.fixture
+    def fixture_space(self):
+        # 複数のspaceを作成する
+        return [Space.objects.create() for _ in range(3)]
+
+    @pytest.fixture
+    def fixture_structure(self, fixture_space):
+        # spaceに関連するstructureを作成する
+        related_structure = [
+            Structure.objects.create(space=space) for space in fixture_space
+        ]
+        # 各spaceとは関連しないstructureを作成する
+        unrelated_structure = [Structure.objects.create() for _ in range(3)]
+
+        return related_structure, unrelated_structure
+
+    @pytest.mark.django_db
+    def test_正常系_関連するstructureを取得する場合(
+        self, fixture_space, fixture_structure
+    ):
+        """関連するstructureを取得する場合"""
+        related_structure, unrelated_structure = fixture_structure
+        for i, space in enumerate(fixture_space):
+            # logger.debug(f"### space: {space}")
+            # logger.debug(f"### related_structure[i]: {related_structure[i]}")
+            assert list(space.structures.all()) == [related_structure[i]]
+
+        for i, space in enumerate(fixture_space):
+            # logger.debug(f"### space: {space}")
+            # logger.debug(f"### unrelated_structure[i]: {unrelated_structure[i]}")
+            assert list(space.structures.all()) != [unrelated_structure[i]]
