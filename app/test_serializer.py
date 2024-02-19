@@ -1,7 +1,9 @@
+from typing import Dict, List, Union
+
 import pytest
 from inline_snapshot import snapshot
 
-from app.models import Access, ApiKeys
+from app.models import Access, ApiKeys, PublishmentStatus
 from app.serializer import (
     AccessSerializer,
     ApiKeysSerializer,
@@ -23,6 +25,49 @@ class TestPublishmentStatusSerializer:
         serializer = PublishmentStatusSerializer(data=data)
         assert serializer.is_valid() == False
         assert serializer.errors
+
+    @pytest.fixture
+    def fixture_PublishmentStatusにデータを登録(self):
+        data = [
+            {
+                "status": "draft",
+            },
+            {
+                "status": "review",
+            },
+            {
+                "status": "published",
+            },
+            {
+                "status": "archived",
+            },
+        ]
+
+        serializer_data_list: List[Union[Dict[str, str], List[str]]] = []
+        for d in data:
+            serializer = PublishmentStatusSerializer(data=d)
+
+            assert serializer.is_valid(), serializer.errors
+            serializer.save() if serializer.is_valid() else ValueError(
+                serializer.errors
+            )
+            serializer_data: Union[Dict[str, str], List[str]] = serializer.data
+            serializer_data_list.append(serializer_data)
+
+        return serializer_data_list
+
+    @pytest.mark.django_db
+    def test_Fixtureのデータが登録されている(
+        self, fixture_PublishmentStatusにデータを登録
+    ):
+        for data in fixture_PublishmentStatusにデータを登録:
+            assert data["status"] in ["draft", "review", "published", "archived"]
+
+        # データベースのデータを取得
+        result = PublishmentStatus.objects.all()
+        assert len(result) == 4
+        for r in result:
+            assert r.status in ["draft", "review", "published", "archived"]
 
 
 class TestDataSerializer:
@@ -97,6 +142,62 @@ class TestDataSerializer:
             "block1": {"singleline_field": "foobar", "boolean_field": True}
         }
         assert serialized_data["_status"][0]["status"] == "draft"
+
+    # []check このテストはエラーになる
+    # なぜなら、ネストされたPublishmentStatusSerializerがデータベースに登録できないため
+    # 登録するためにはDataSerializerのsaveメソッドをオーバーライドする必要がある
+    # @pytest.fixture
+    # def fixture_複数のDataデータをデータベースに登録する(self):
+    #     data = [
+    #         {
+    #             "_title": "title1",
+    #             "value": {
+    #                 "block1": {"singleline_field": "foobar", "boolean_field": True}
+    #             },
+    #             "_status": [{"status": "draft"}],
+    #         },
+    #         {
+    #             "_title": "title2",
+    #             "value": {
+    #                 "block1": {"singleline_field": "foobar", "boolean_field": True}
+    #             },
+    #             "_status": [{"status": "draft"}],
+    #         },
+    #         {
+    #             "_title": "title3",
+    #             "value": {
+    #                 "block1": {"singleline_field": "foobar", "boolean_field": True}
+    #             },
+    #             "_status": [{"status": "draft"}],
+    #         },
+    #     ]
+
+    #     serializer_data_list: List[Union[Dict[str, str], List[str]]] = []
+    #     for d in data:
+    #         serializer = DataSerializer(data=d)
+
+    #         assert serializer.is_valid(), serializer.errors
+    #         serializer.save() if serializer.is_valid() else ValueError(
+    #             serializer.errors
+    #         )
+    #         serializer_data: Union[Dict[str, str], List[str]] = serializer.data
+    #         serializer_data_list.append(serializer_data)
+
+    #     return serializer_data_list
+
+    # @pytest.mark.django_db
+    # def test_Fixtureのデータが登録されている(
+    #     self, fixture_複数のDataデータをデータベースに登録する
+    # ):
+    #     # すでにデータベースに登録されているデータをシリアライザで取得
+    #     result = DataSerializer(Data.objects.all(), many=True).data
+    #     assert len(result) == 3
+    #     for r in result:
+    #         assert r["_title"] in ["title1", "title2", "title3"]
+    #         assert r["value"] == {
+    #             "block1": {"singleline_field": "foobar", "boolean_field": True}
+    #         }
+    #         assert r["_status"][0]["status"] == "draft"
 
 
 class TestStructureSerializer:
