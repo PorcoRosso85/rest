@@ -1,6 +1,15 @@
 import pytest
 
-from app.models import Access, ApiKeys, Associate, Space, Structure, User
+from app.models import (
+    Access,
+    ApiKeys,
+    Associate,
+    Data,
+    FieldModel,
+    Space,
+    Structure,
+    User,
+)
 
 
 class TestApiKeysModel:
@@ -248,3 +257,11 @@ class TestUserModel:
         assert user3.associates.first().id == associate2.id
         assert not user3.associates.first().api_keys.first().id == api_key1.id
         assert user3.associates.first().api_keys.first().id == api_key2.id
+
+
+class TestFieldModel:
+    @pytest.mark.django_db
+    def test_modelフィールドにはJson形式のデータを保存できる(self):
+        data = Data.objects.create()
+        model = FieldModel.objects.create(data=data, model={"test": "test"})
+        assert model.model == {"test": "test"}

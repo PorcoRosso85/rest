@@ -149,6 +149,16 @@ def get_default_data() -> int:
     return new_data.id
 
 
+class FieldModel(models.Model):
+    model = models.JSONField(default=dict)  # type: ignore
+    data = models.ForeignKey(
+        Data,
+        related_name="model",
+        on_delete=models.CASCADE,
+        default=get_default_data,  # type: ignore
+    )
+
+
 class PublishmentStatus(models.Model):
     STATUS_OPTIONS = [
         ("draft", "Draft"),
