@@ -23,7 +23,7 @@ def postsave_signal_publishmentstate(sender, instance, **kwargs):
         logger.info("published_at is added")
 
 
-class TestPublishmentStatusSignal:
+class TestPostSaveSignalPublishmentStatus:
     @pytest.mark.django_db
     def test_正常系_バリデーションが成功する場合(self):
         """バリデーションが成功する場合"""
@@ -54,3 +54,25 @@ def presave_signal_data(sender, instance, **kwargs):
 
     # updated_atを更新する
     instance._updated_at = timezone.now()
+
+
+class TestPreSaveSignalData:
+    @pytest.fixture
+    def fixture_data(self):
+        return Data.objects.create(value={"key": "value"})
+
+    @pytest.mark.django_db
+    def test_正常系_日付が追加された(self, fixture_data):
+        assert fixture_data._created_at is not None
+        assert fixture_data._updated_at is not None
+
+    @pytest.mark.django_db
+    def test_正常系_バリデーションが成功する場合(self, fixture_data):
+        """バリデーションが成功する場合"""
+        assert fixture_data.value == {"key": "value"}
+
+    @pytest.mark.django_db
+    def test_異常系_バリデーションが失敗する場合(self):
+        """バリデーションが失敗する場合"""
+        with pytest.raises(Exception):
+            Data(value={}).save()
