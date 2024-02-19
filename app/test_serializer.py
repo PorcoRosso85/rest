@@ -283,26 +283,41 @@ class TestApiKeysSerializer:
         serializer = ApiKeysSerializer(api_key)
         data = serializer.data
         assert data["id"] == api_key.id
-        assert data["key"] == str(api_key.key)
+        assert data["api_key"] == str(api_key.api_key)
 
     @pytest.mark.django_db
     def test_不正なデータのエラーハンドリング(self):
-        ApiKeys.objects.create(key="test_key")
-        data = {"key": "test_key"}  # 重複したキー
+        ApiKeys.objects.create(api_key="test_key")
+        data = {"api_key": "test_key"}  # 重複したキー
         serializer = ApiKeysSerializer(data=data)
         assert not serializer.is_valid()
-        assert "key" in serializer.errors
+        assert "api_key" in serializer.errors
 
     @pytest.mark.django_db
-    def test_正常(self):
-        data = {}
+    def test_異常_重複したapiKeyの登録(self):
+        api_key = ApiKeys.objects.create()
+        access = Access.objects.create(api_key=api_key)
+        data = {
+            "api_key": str(api_key.api_key),
+            "access": [{"id": access.id}],
+        }
         serializer = ApiKeysSerializer(data=data)
-        assert serializer.is_valid(), serializer.errors
+        assert not serializer.is_valid(), serializer.errors
         serialized_data = serializer.data
         assert isinstance(
             serialized_data, dict
         ), f"Expected dict, got {type(serialized_data)}"
-        # assert serialized_data["api_key"] == "api_key"
+
+    @pytest.mark.django_db
+    def test_正常系_バリデーションが成功する場合(self):
+        """バリデーションが成功する場合"""
+        api_key = ApiKeys.objects.create()
+        access = Access.objects.create(api_key=api_key)
+        data = {
+            "access": [{"id": access.id}],
+        }
+        serializer = ApiKeysSerializer(data=data)
+        assert serializer.is_valid(), serializer.errors
 
 
 # class TestSpaceSerializer:
