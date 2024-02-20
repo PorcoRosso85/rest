@@ -13,7 +13,7 @@ class User(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
 
-class Associate(models.Model):
+class Organization(models.Model):
     """Userの所属先であり 複数のSpaceを持つことができる"""
 
     PLAN_OPTIONS = [
@@ -30,15 +30,15 @@ class Associate(models.Model):
     plan = models.CharField(max_length=100, choices=PLAN_OPTIONS, default="free")
     plan_created_at = models.DateTimeField(default=timezone.now)
     plan_updated_at = models.DateTimeField(default=timezone.now)
-    user = models.ManyToManyField(User, related_name="associates")
+    user = models.ManyToManyField(User, related_name="organization")
 
 
-def get_default_associate() -> int:
-    associate = Associate.objects.first()
-    if associate:
-        return associate.id
-    new_associate = Associate.objects.create()
-    return new_associate.id
+def get_default_organization() -> int:
+    organization = Organization.objects.first()
+    if organization:
+        return organization.id
+    new_organization = Organization.objects.create()
+    return new_organization.id
 
 
 class Space(models.Model):
@@ -46,11 +46,11 @@ class Space(models.Model):
     name = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    associate = models.ForeignKey(
-        Associate,
+    organization = models.ForeignKey(
+        Organization,
         related_name="spaces",
         on_delete=models.CASCADE,
-        default=get_default_associate,  # type: ignore
+        default=get_default_organization,  # type: ignore
     )
 
 
@@ -66,18 +66,18 @@ class ApiKeys(models.Model):
     """発行したAPIキーを管理する"""
 
     id = models.AutoField(primary_key=True)
-    api_key = models.CharField(
+    key = models.CharField(
         max_length=100,
         default=uuid.uuid4,  # type: ignore
         unique=True,
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    associate = models.ForeignKey(
-        Associate,
+    space = models.ForeignKey(
+        Space,
         related_name="api_keys",
         on_delete=models.CASCADE,
-        default=get_default_associate,  # type: ignore
+        default=get_default_space,  # type: ignore
     )
 
 
@@ -90,7 +90,7 @@ def get_default_api_key() -> int:
 
 
 class Access(models.Model):
-    """Associateの利用状況を管理する"""
+    """Organizationの利用状況を管理する"""
 
     id = models.AutoField(primary_key=True)
     createad_at = models.DateTimeField(auto_now_add=True)
@@ -102,44 +102,20 @@ class Access(models.Model):
     )
 
 
-class Structure(models.Model):
-    """userが作成した構造(モデルと呼ばれる)を管理する"""
-
-    id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=100)
-    description = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    space = models.ForeignKey(
-        Space,
-        related_name="structures",
-        on_delete=models.CASCADE,
-        default=get_default_space,  # type: ignore
-    )
-
-
-def get_default_structure() -> int:
-    structure = Structure.objects.first()
-    if structure:
-        return structure.id
-    new_structure = Structure.objects.create()
-    return new_structure.id
-
-
 class Data(models.Model):
     id = models.AutoField(primary_key=True)
     _title = models.CharField(max_length=100)
     _created_at = models.DateTimeField(auto_now_add=True)
     _updated_at = models.DateTimeField(auto_now=True)
     _published_at = models.DateTimeField(auto_now=True)
-    structure = models.ForeignKey(
-        Structure,
-        related_name="data",
-        on_delete=models.CASCADE,
-        default=get_default_structure,  # type: ignore
-    )
     value = models.JSONField(default=dict)  # type: ignore
     _model = models.JSONField(default=dict)  # type: ignore
+    space = models.ForeignKey(
+        Space,
+        related_name="data",
+        on_delete=models.CASCADE,
+        default=get_default_space,  # type: ignore
+    )
 
 
 def get_default_data() -> int:
@@ -159,7 +135,7 @@ class PublishmentStatus(models.Model):
     ]
 
     status = models.CharField(max_length=100, choices=STATUS_OPTIONS, default="draft")
-    data = models.ForeignKey(
+    _data = models.ForeignKey(
         Data,
         related_name="status",
         on_delete=models.CASCADE,

@@ -3,7 +3,13 @@ from typing import Any, Dict, TypeAlias
 
 from rest_framework import serializers
 
-from app.models import Access, ApiKeys, Data, PublishmentStatus, Space, Structure
+from app.models import (
+    Access,
+    ApiKeys,
+    Data,
+    PublishmentStatus,
+    Space,
+)
 
 AttrsType: TypeAlias = Dict[str, Any]
 
@@ -24,27 +30,19 @@ class PublishmentStatusSerializer(serializers.ModelSerializer):
 class DataSerializer(serializers.ModelSerializer):
     """dataを返すシリアライザ"""
 
-    # PublishmentStatusモデル側で外部キーを指定しているため、many=Trueを指定する
-    _status = PublishmentStatusSerializer(many=True)
-    structure = serializers.PrimaryKeyRelatedField(read_only=True)
+    status = PublishmentStatusSerializer(many=True)
 
     class Meta:
         model = Data
-        fields = "__all__"
-
-
-class StructureSerializer(serializers.ModelSerializer):
-    """structureを返すシリアライザ"""
-
-    # []todo
-    # total: _dataの総数
-    # offset
-    # limit
-    _data = DataSerializer(many=True)
-
-    class Meta:
-        model = Structure
-        fields = "__all__"
+        fields = [
+            "_title",
+            "_created_at",
+            "_updated_at",
+            "_published_at",
+            "value",
+            "_model",
+            "status",
+        ]
 
 
 class AccessSerializer(serializers.ModelSerializer):
@@ -68,11 +66,11 @@ class ApiKeysSerializer(serializers.ModelSerializer):
 class SpaceSerializer(serializers.ModelSerializer):
     """ """
 
-    structures = StructureSerializer(many=True)
+    _data = DataSerializer(many=True)
 
     class Meta:
         model = Space
-        fields = ["id", "name", "structures"]
+        fields = ["name", "_data"]
 
     def validate(self, attrs: AttrsType) -> AttrsType:
         if "name" not in attrs or not attrs["name"]:
@@ -81,49 +79,3 @@ class SpaceSerializer(serializers.ModelSerializer):
         if re.match(r"^\d+$", attrs["name"]):
             raise serializers.ValidationError("name is invalid")
         return attrs
-
-
-# class PlanSerializer(serializers.ModelSerializer):
-#     """
-#     planを返すシリアライザ
-#     """
-
-#     class Meta:
-#         model = Plan
-#         fields = "__all__"
-
-#     def validate(self, data):
-#         # free, standard, premiumのいずれかでない場合はエラー
-#         if data["name"] not in ["free", "standard", "premium"]:
-#             raise serializers.ValidationError("plan is invalid")
-#         return data
-
-
-# class UserSerializer(serializers.ModelSerializer):
-#     """
-#     userを返すシリアライザ
-#     """
-
-#     class Meta:
-#         model = User
-#         fields = "__all__"
-
-
-# class UsageSerializer(serializers.ModelSerializer):
-#     """
-#     usageを返すシリアライザ
-#     """
-
-#     class Meta:
-#         model = Usage
-#         fields = "__all__"
-
-
-# class AssociateSerializer(serializers.ModelSerializer):
-#     """
-#     associateを返すシリアライザ
-#     """
-
-#     class Meta:
-#         model = Associate
-#         fields = "__all__"
