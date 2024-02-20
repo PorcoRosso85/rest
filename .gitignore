@@ -4,3 +4,5 @@
 .hypothesis
 !app/
 !/app/
+!core/
+!/core/

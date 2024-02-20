@@ -35,6 +35,7 @@ dev-dependencies = [
 ]
 
 [tool.rye.scripts]
+serve = "python manage.py runserver"
 test = "pytest"
 format = "black ."
 lint = "mypy ."
