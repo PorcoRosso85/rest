@@ -319,6 +319,7 @@ class TestSpaceSerializer:
         space 1 : data N
         """
         # Dataの外部キーのために、Spaceを作成
+        # Dataを絞り込みたい場合は、Spaceを作成して、そのSpaceに紐づくDataを作成する
         space_instance = Space.objects.create(name="spacename")
 
         # Dataシリアライザのために、データを作成
@@ -330,9 +331,9 @@ class TestSpaceSerializer:
 
         # Spaceシリアライザのために、データを作成
         # _data = DataSerializer()
-        _data = [DataSerializer(data_instance).data]
+        request_data = [DataSerializer(data_instance).data]
 
-        data = {"name": "name", "_data": _data}
+        data = {"name": "requestname", "_data": request_data}
         serializer = SpaceSerializer(data=data)
         assert serializer.is_valid(), serializer.errors
         serialized_data = serializer.data
@@ -341,7 +342,7 @@ class TestSpaceSerializer:
         ), f"Expected dict, got {type(serialized_data)}"
         assert serialized_data == snapshot(
             {
-                "name": "name",
+                "name": "requestname",
                 "_data": [
                     # OrderedDict(
                     {
