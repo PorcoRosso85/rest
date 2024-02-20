@@ -61,4 +61,5 @@ urlpatterns = [
             {"get": "retrieve", "put": "update", "delete": "destroy"}
         ),
     ),
+    path("cookie/", views.CookieView.as_view()),
 ]

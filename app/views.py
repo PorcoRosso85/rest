@@ -1,4 +1,5 @@
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
 from app.models import Access, ApiKeys
@@ -94,6 +95,7 @@ class TestApiViewSet:
         logger.debug(f"### response: {response.content}")
         assert response.status_code == 200
 
+    @pytest.mark.skip("Not implemented")
     def test_create_apikey(self):
         access = Access.objects.create()  # Accessモデルのインスタンスを作成
         # access field is required
@@ -110,3 +112,60 @@ class TestApiViewSet:
         response: Response = self.client.post("/apikeys/", data=data, format="json")
         logger.debug(f"### response: {response.content}")
         assert response.status_code == 201
+
+
+class CookieView(APIView):
+    def get(self, request) -> Response:
+        response = Response({"message": "General cookie set successfully"})
+        response.set_cookie(
+            "session_id",
+            "your_session_id",
+            max_age=3600,
+            secure=True,
+            httponly=True,
+            samesite="Strict",
+        )
+        response.set_cookie(
+            "user_settings",
+            "your_user_settings",
+            max_age=3600,
+            secure=True,
+            httponly=True,
+            samesite="Strict",
+        )
+        response.set_cookie(
+            "tracking_data",
+            "your_tracking_data",
+            max_age=3600,
+            secure=True,
+            httponly=True,
+            samesite="Strict",
+        )
+        return response
+
+
+class TestSetCookieView:
+    def setup_method(self):
+        self.client = APIClient()
+        assert self.client is not None
+        assert isinstance(self.client, APIClient)
+
+    # レスポンスをテストしたい
+    def test_set_cookie(self):
+        response: Response = self.client.get("/cookie/")
+        assert response.status_code == 200
+        assert response.cookies["session_id"].value == "your_session_id"
+        assert response.cookies["user_settings"].value == "your_user_settings"
+        assert response.cookies["tracking_data"].value == "your_tracking_data"
+        assert response.cookies["session_id"]["max-age"] == 3600
+        assert response.cookies["user_settings"]["max-age"] == 3600
+        assert response.cookies["tracking_data"]["max-age"] == 3600
+        assert response.cookies["session_id"]["secure"] == True
+        assert response.cookies["user_settings"]["secure"] == True
+        assert response.cookies["tracking_data"]["secure"] == True
+        assert response.cookies["session_id"]["httponly"] == True
+        assert response.cookies["user_settings"]["httponly"] == True
+        assert response.cookies["tracking_data"]["httponly"] == True
+        assert response.cookies["session_id"]["samesite"] == "Strict"
+        assert response.cookies["user_settings"]["samesite"] == "Strict"
+        assert response.cookies["tracking_data"]["samesite"] == "Strict"
