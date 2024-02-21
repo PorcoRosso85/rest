@@ -1,5 +1,9 @@
 **__pycache__/
 *.sqlite3
 *.lock
-**migrations/
 .hypothesis
+!app/
+!/app/
+!core/
+!/core/
+**/*sample

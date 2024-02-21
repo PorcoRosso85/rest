@@ -9,6 +9,8 @@ dependencies = [
     "psycopg[binary]>=3.1.18",
     "inline-snapshot>=0.6.1",
     "hypothesis>=6.98.4",
+    "Pillow>=10.2.0",
+    "pydeps>=1.12.18",
 ]
 readme = "README.md"
 requires-python = ">= 3.12"
@@ -33,10 +35,13 @@ dev-dependencies = [
 ]
 
 [tool.rye.scripts]
+serve = "python manage.py runserver"
 test = "pytest"
 format = "black ."
 lint = "mypy ."
-snapshot = "pytest --inline-snapshot=create"
+sscreate = "pytest --inline-snapshot=create"
+ssfix = "pytest --inline-snapshot=fix"
+ssupdate = "pytest --inline-snapshot=update"
 
 [tool.hatch.metadata]
 allow-direct-references = true
@@ -53,3 +58,7 @@ addopts = [
     # "--cov-report=html",
     # "--disable-pytest-warnings",
 ]
+
+
+[tool.ruff.lint]
+# select = "E, W, F, DJ, PLC"

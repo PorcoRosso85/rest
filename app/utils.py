@@ -1,5 +1,7 @@
 import logging
 
+import pytest
+
 # ロガーを作成します。
 logger = logging.getLogger(__name__)
 
@@ -12,43 +14,67 @@ log_levels = {
     logging.CRITICAL: "[CRITICAL]",
 }
 
+
+class LevelFilter(logging.Filter):
+    def __init__(self, level):
+        self.level = level
+
+    def filter(self, record):
+        return record.levelno == self.level
+
+
 # 各ログレベルに対してハンドラを作成し、ログメッセージのフォーマットを設定します。
 for log_level, prefix in log_levels.items():
     handler = logging.StreamHandler()
     formatter = logging.Formatter(
-        f"{prefix} %(message)s"
+        f"\n {prefix} %(message)s"
     )  # プレフィックスを設定します。
     handler.setFormatter(formatter)
     handler.setLevel(log_level)
+    handler.addFilter(LevelFilter(log_level))  # フィルターを追加します。
     logger.addHandler(handler)
 
-# ログレベルを設定します。
-logger.setLevel(logging.DEBUG)
+
+class TestLogger:
+    def test_正常系_ロガーを使用する場合(self):
+        """ロガーを使用する場合"""
+        logger.debug("デバッグメッセージ")
+        logger.info("情報メッセージ")
+        logger.warning("警告メッセージ")
+        logger.error("エラーメッセージ")
+        logger.critical("致命的なエラーメッセージ")
 
 
-# def test_logger(caplog):
-#     # ロガーを設定します。
-#     logger = logging.getLogger("app.utils")
-#     logger.setLevel(logging.DEBUG)
+class ExceptionProcessor:
+    """このクラスは例外を処理するためのクラスです。
+    例外が発生した際
+    - ログに例外を出力します。
+    - 例外が返却されます。
+    -
+    このクラスを使用することでログを出力しつつ、返却された例外を処理することができます。
+    """
 
-#     # ハンドラを設定します。
-#     handler = logging.StreamHandler()
-#     formatter = logging.Formatter("[%(levelname)s] %(message)s")
-#     handler.setFormatter(formatter)
-#     logger.addHandler(handler)
+    def __init__(self, logger: logging.Logger) -> None:
+        self.logger = logger
 
-#     # ログを出力します。
-#     logger.debug("This is a debug message.")
-#     assert "[DEBUG] This is a debug message" in caplog.text
+    def process(self, e: Exception) -> Exception:
+        """例外を処理します。
+        Args:
+            e (Exception): 例外
+        Returns:
+            Exception: 例外
+        """
+        self.logger.exception(e)
+        return e
 
-#     logger.info("This is an info message.")
-#     assert "[INFO] This is an info message" in caplog.text
 
-#     logger.warning("This is a warning message.")
-#     assert "[WARNING] This is a warning message" in caplog.text
+class TestExceptionProcessor:
+    @pytest.fixture
+    def exception_processor(self):
+        return ExceptionProcessor(logger)
 
-#     logger.error("This is an error message.")
-#     assert "[ERROR] This is an error message" in caplog.text
-
-#     logger.critical("This is a critical message.")
-#     assert "[CRITICAL] This is a critical message" in caplog.textt
+    def test_正常系_例外を処理する場合(self, exception_processor):
+        """例外を処理する場合"""
+        e = Exception("エラーが発生しました。")
+        with pytest.raises(Exception):
+            raise exception_processor.process(e)
