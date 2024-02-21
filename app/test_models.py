@@ -1,7 +1,12 @@
+import logging
+
 import pytest
 from inline_snapshot import snapshot
 
 from app.models import Access, ApiKeys, Data, Organization, Space, User
+from app.utils import logger
+
+logger.setLevel(logging.DEBUG)
 
 
 class TestApiKeysModel:
@@ -45,11 +50,69 @@ class TestAccessModel:
 
 
 class TestSpaceModel:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        logger.debug("データを削除します")
+        Organization.objects.all().delete()
+        Space.objects.all().delete()
+        User.objects.all().delete()
+        Data.objects.all().delete()
+
     @pytest.mark.django_db
     def test_正常系_クエリが成功する場合(self):
         """クエリが成功する場合"""
         space = Space.objects.create()
         assert space.id is not None
+
+    @pytest.mark.django_db
+    def test_正常系_関連するDataのidを取得する(self):
+        space = Space.objects.create()
+        data = Data.objects.create(space=space)
+        assert space.data.first().id == data.id
+
+    @pytest.mark.django_db
+    def test_正常系_関連するDataを取得する(self):
+        space = Space.objects.create()
+        data = Data.objects.create(space=space)
+        assert space.data.first().id == data.id
+
+    @pytest.mark.django_db
+    def test_正常系_関連するDataを追加する(self):
+        space = Space.objects.create()
+        assert space.data.count() == 0
+        data = Data.objects.create(space=space)
+        assert space.data.count() == 1
+        data2 = Data.objects.create(space=space)
+        assert space.data.count() == 2
+
+    @pytest.mark.django_db
+    def test_正常系_関連するDataを削除する(self):
+        space: Space = Space.objects.create()
+        data: Data = Data.objects.create(space=space)
+        assert space.data.count() == 1
+        data.delete()
+        assert space.data.count() == 0
+
+    @pytest.mark.django_db
+    def test_正常系_関連するDataを更新する(self):
+        space = Space.objects.create()
+        data = Data.objects.create(space=space)
+        assert space.data.count() == 1
+        data2 = Data.objects.create(space=space)
+        assert space.data.count() == 2
+        assert space.data.first().id == data.id
+        assert space.data.last().id == data2.id
+
+        data2._title = "test"
+        data2.value = {"test": "test"}
+        data2.save()
+        assert space.data.count() == 2
+        assert space.data.first().id == data.id
+        assert space.data.last().id == data2.id
+
+        # data2.idのデータを取得
+        assert space.data.get(id=data2.id)._title == "test"
+        assert space.data.get(id=data2.id).value == {"test": "test"}
 
 
 class TestUserModel:
