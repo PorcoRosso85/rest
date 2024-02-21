@@ -4,7 +4,6 @@ import pytest
 
 # ロガーを作成します。
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
 
 # ログレベルとプレフィックスのマッピングを定義します。
 log_levels = {
