@@ -107,7 +107,7 @@ class Data(models.Model):
     _title = models.CharField(max_length=100)
     _created_at = models.DateTimeField(auto_now_add=True)
     _updated_at = models.DateTimeField(auto_now=True)
-    _published_at = models.DateTimeField(auto_now=True)
+    _published_at = models.DateTimeField(null=True, blank=True)
     value = models.JSONField(default=dict)  # type: ignore
     _model = models.JSONField(default=dict)  # type: ignore
     space = models.ForeignKey(

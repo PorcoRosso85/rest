@@ -113,6 +113,9 @@ class TestSpaceModel:
         # data2.idのデータを取得
         assert space.data.get(id=data2.id)._title == "test"
         assert space.data.get(id=data2.id).value == {"test": "test"}
+        assert space.data.get(id=data2.id)._created_at is not None
+        assert space.data.get(id=data2.id)._updated_at is not None
+        # assert space.data.get(id=data2.id)._published_at is not None
 
 
 class TestUserModel:
