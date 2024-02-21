@@ -98,10 +98,6 @@ class TestApiViewSet:
     @pytest.mark.skip("Not implemented")
     def test_create_apikey(self):
         access = Access.objects.create()  # Accessモデルのインスタンスを作成
-        # access field is required
-        # data = {
-        #     "access": access.id,
-        # }
         access_serializer = AccessSerializer(access)
         # []check ネストされたシリアライザの書き込みは非サポート
         data = {
@@ -109,6 +105,7 @@ class TestApiViewSet:
                 access_serializer.data,
             ]
         }
+        # /apikeys/でApiSerializerを使ってPOSTリクエストを送信、ネストされたAccessSerializerを使ってデータを作成
         response: Response = self.client.post("/apikeys/", data=data, format="json")
         logger.debug(f"### response: {response.content}")
         assert response.status_code == 201
