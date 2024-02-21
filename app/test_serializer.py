@@ -313,7 +313,78 @@ from app.serializer import DataSerializer, SpaceSerializer
 
 class TestSpaceSerializer:
     @pytest.mark.django_db
-    def test_正常(self):
+    def test_異常_バリデーションエラー_noname(self):
+        """
+        異常系
+        nameがない
+        """
+        data = {"_data": []}
+        serializer = SpaceSerializer(data=data)
+        assert not serializer.is_valid()
+        assert "name" in serializer.errors
+
+    @pytest.mark.django_db
+    def test_異常_バリデーションエラー_blankname(self):
+        """
+        異常系
+        nameが空
+        """
+        data = {"name": "", "_data": []}
+        serializer = SpaceSerializer(data=data)
+        assert not serializer.is_valid()
+        assert "name" in serializer.errors
+
+    @pytest.mark.django_db
+    def test_異常_バリデーションエラー_nodata(self):
+        """
+        異常系
+        dataがない
+        """
+        data = {"name": "name"}
+        serializer = SpaceSerializer(data=data)
+        assert not serializer.is_valid()
+        assert "_data" in serializer.errors
+
+    @pytest.mark.skip
+    @pytest.mark.django_db
+    def test_異常_バリデーションエラー_blankdata(self):
+        """
+        異常系
+        dataが空
+        """
+        # []check dataはblankでもいいのか
+        data = {"name": "name", "_data": []}
+        serializer = SpaceSerializer(data=data)
+        assert not serializer.is_valid()
+        assert "_data" in serializer.errors
+
+    @pytest.mark.skip
+    @pytest.mark.django_db
+    def test_異常_バリデーションエラー_invalidname(self):
+        """
+        異常系
+        nameが不正
+        """
+        # []check nameが数字でもいいのか
+        data = {"name": 123, "_data": []}
+        serializer = SpaceSerializer(data=data)
+        assert not serializer.is_valid()
+        assert "name" in serializer.errors
+
+    @pytest.mark.django_db
+    def test_異常_バリデーションエラー_invaliddata(self):
+        """
+        異常系
+        dataが不正
+        """
+        # []check dataが数字でもいいのか
+        data = {"name": "name", "_data": 123}
+        serializer = SpaceSerializer(data=data)
+        assert not serializer.is_valid()
+        assert "_data" in serializer.errors
+
+    @pytest.mark.django_db
+    def test_正常_SpaceシリアライザでSpaceを取得する_複数のDataを持つSpace(self):
         """
         正常系
         space 1 : data N
@@ -360,3 +431,83 @@ class TestSpaceSerializer:
                 ],
             }
         )
+
+    @pytest.mark.django_db
+    def test_正常_Spaceシリアライザでデータを更新する(self):
+        space_instance = Space.objects.create(name="name")
+        data_instance = Data.objects.create(
+            _title="title",
+            value={"block1": {"singleline_field": "foobar", "boolean_field": True}},
+            space=space_instance,
+        )
+
+        updated_space = {
+            "name": "updated name",
+            "_data": [DataSerializer(data_instance).data],
+        }
+
+        space_serializer = SpaceSerializer(
+            instance=space_instance, data=updated_space, partial=True
+        )
+
+        assert space_serializer.is_valid()
+
+        space_serializer.save()
+
+        updated_space_instance = Space.objects.get(id=space_instance.id)
+        assert updated_space_instance.name == "updated name"
+
+
+class TestDataSerializer:
+    @pytest.mark.django_db
+    def test_正常_Dataシリアライザでデータを更新する(self):
+        # 初期データの作成
+        space_instance = Space.objects.create(name="name")
+        data_instance = Data.objects.create(
+            _title="title",
+            value={"block1": {"singleline_field": "foobar", "boolean_field": True}},
+            space=space_instance,
+        )
+
+        # 更新データ
+        updated_data = {
+            "_title": "updated title",
+            "value": {
+                "block1": {"singleline_field": "updated foobar", "boolean_field": False}
+            },
+        }
+
+        # シリアライザの初期化
+        serializer = DataSerializer(
+            instance=data_instance, data=updated_data, partial=True
+        )
+
+        # データの検証
+        assert serializer.is_valid()
+
+        # データの更新
+        serializer.save()
+
+        # データの確認
+        updated_data_instance = Data.objects.get(id=data_instance.id)
+        assert updated_data_instance._title == "updated title"
+        assert updated_data_instance.value == {
+            "block1": {"singleline_field": "updated foobar", "boolean_field": False}
+        }
+
+    @pytest.mark.django_db
+    def test_正常_Dataシリアライザでデータを削除する(self):
+        # 初期データの作成
+        space = Space.objects.create(name="name")
+        data_instance = Data.objects.create(
+            _title="title",
+            value={"block1": {"singleline_field": "foobar", "boolean_field": True}},
+            space=space,
+        )
+
+        # データの削除
+        data_instance.delete()
+
+        # データの確認
+        with pytest.raises(Data.DoesNotExist):
+            Data.objects.get(id=data_instance.id)
