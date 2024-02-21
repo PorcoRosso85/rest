@@ -56,7 +56,7 @@ class AccessSerializer(serializers.ModelSerializer):
 class ApiKeysSerializer(serializers.ModelSerializer):
     """api_keyを返すシリアライザ"""
 
-    access = AccessSerializer(many=True)
+    access = AccessSerializer(many=True, read_only=True)
 
     class Meta:
         model = ApiKeys

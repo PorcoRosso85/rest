@@ -457,6 +457,45 @@ class TestSpaceSerializer:
         updated_space_instance = Space.objects.get(id=space_instance.id)
         assert updated_space_instance.name == "updated name"
 
+    @pytest.mark.skip
+    @pytest.mark.django_db
+    def test_正常_SpaceシリアライザからDataシリアライザを使ってデータを更新する(self):
+        space_instance = Space.objects.create(name="name")
+        data_instance = Data.objects.create(
+            _title="title",
+            value={"block1": {"singleline_field": "foobar", "boolean_field": True}},
+            space=space_instance,
+        )
+
+        updated_data = {
+            "_title": "updated title",
+            "value": {
+                "block1": {"singleline_field": "updated foobar", "boolean_field": False}
+            },
+        }
+
+        updated_space = {"name": "updated name", "_data": [updated_data]}
+
+        space_serializer = SpaceSerializer(
+            instance=space_instance, data=updated_space, partial=True
+        )
+
+        assert space_serializer.is_valid(), space_serializer.errors
+
+        # データの更新
+        space_serializer.save()
+
+        # データの確認
+        updated_space_instance = Space.objects.get(id=space_instance.id)
+        assert updated_space_instance.name == "updated name"
+        updated_data_instance = Data.objects.get(id=data_instance.id)
+
+        # []todo SpaceSerializerのsaveメソッドをオーバーライドして、DataSerializerを使ってデータを更新する
+        assert updated_data_instance._title == "updated title"
+        assert updated_data_instance.value == {
+            "block1": {"singleline_field": "updated foobar", "boolean_field": False}
+        }
+
 
 class TestDataSerializer:
     @pytest.mark.django_db

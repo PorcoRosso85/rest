@@ -95,7 +95,7 @@ class TestApiViewSet:
         logger.debug(f"### response: {response.content}")
         assert response.status_code == 200
 
-    @pytest.mark.skip("Not implemented")
+    # @pytest.mark.skip("Not implemented")
     def test_create_apikey(self):
         access = Access.objects.create()  # Accessモデルのインスタンスを作成
         access_serializer = AccessSerializer(access)
