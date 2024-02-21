@@ -17,8 +17,10 @@ from app.utils import logger
 
 @receiver(post_save, sender=Data)
 def fill_published_at(sender, instance, created, **kwargs):
-    logger.debug("!!! fill_published_at")
-    instance._published_at = timezone.now()
+    logger.debug("### fill_published_at SIGNAL for Data Model")
+    if instance._published_at is None:
+        instance._published_at = timezone.now()
+        instance.save(update_fields=["_published_at"])
 
 
 import pytest
@@ -28,11 +30,13 @@ class TestFillPublishedAt:
     @pytest.mark.django_db
     def test_正常系_シグナルが発火する(self):
         _data = Data.objects.create()
+        _data.save()
         publishment_status = PublishmentStatus.objects.create(
             _data=_data, status="published"
         )
-        _data.save()
         publishment_status.save()
+
+        # インスタンスのアサーション
         assert _data.id == publishment_status._data.id
         assert _data._published_at is not None
         # assert _data._published_at == snapshot(
@@ -40,3 +44,7 @@ class TestFillPublishedAt:
         #         2024, 2, 21, 6, 6, 15, 604456, tzinfo=datetime.timezone.utc
         #     )
         # )
+
+        # データベースのアサーション
+        _data = Data.objects.get(id=_data.id)
+        assert _data._published_at is not None

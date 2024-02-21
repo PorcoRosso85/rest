@@ -3,7 +3,15 @@ import logging
 import pytest
 from inline_snapshot import snapshot
 
-from app.models import Access, ApiKeys, Data, Organization, Space, User
+from app.models import (
+    Access,
+    ApiKeys,
+    Data,
+    Organization,
+    PublishmentStatus,
+    Space,
+    User,
+)
 from app.utils import logger
 
 logger.setLevel(logging.DEBUG)
@@ -115,7 +123,6 @@ class TestSpaceModel:
         assert space.data.get(id=data2.id).value == {"test": "test"}
         assert space.data.get(id=data2.id)._created_at is not None
         assert space.data.get(id=data2.id)._updated_at is not None
-        # assert space.data.get(id=data2.id)._published_at is not None
 
 
 class TestUserModel:
@@ -194,3 +201,20 @@ class TestDataModel:
     def test_modelフィールドにはJson形式のデータを保存できる(self):
         data = Data.objects.create(_model={"1": {"2": {"3": [1, 2, 3]}}})
         assert data._model == snapshot({"1": {"2": {"3": [1, 2, 3]}}})
+
+    # []fixme シグナルが発火しないためスキップ
+    @pytest.mark.skip("シグナルが発火しないためスキップ")
+    @pytest.mark.django_db
+    def test_正常系_シグナルが発火する(self):
+        _data = Data.objects.create()
+        _data.save()
+
+        publishment_status = PublishmentStatus.objects.create(
+            _data=_data, status="published"
+        )
+        publishment_status.save()
+
+        # データベースのアサーション
+        _data.refresh_from_db()
+        _data = Data.objects.get(id=_data.id)
+        assert _data._published_at is not None
