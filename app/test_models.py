@@ -179,7 +179,29 @@ class TestUserModel:
         organizations = Organization.objects.filter(membership__user=user)
         assert organizations.count() == 2
         assert organizations.first().id == organization1.id
+        assert organizations.first().name == "organization1"
         assert organizations.last().id == organization2.id
+        assert organizations.last().name == "organization2"
+
+        for organization in organizations:
+            assert organization in [organization1, organization2]
+
+    @pytest.mark.django_db
+    def test_正常_関連するorganizationを取得する02(self):
+        user = User.objects.create(name="testuser")
+        organization1 = Organization.objects.create(name="organization1")
+        organization2 = Organization.objects.create(name="organization2")
+        membership1 = Membership.objects.create(user=user, organization=organization1)
+        membership2 = Membership.objects.create(user=user, organization=organization2)
+
+        organization_ids = user.membership.values_list("organization_id", flat=True)
+        assert organization_ids.count() == 2
+        organizations = [
+            Organization.objects.get(id=organization_id)
+            for organization_id in organization_ids
+        ]
+        for organization in organizations:
+            assert organization in [organization1, organization2]
 
 
 class TestOrganizationModel:
@@ -201,4 +223,9 @@ class TestOrganizationModel:
         users = User.objects.filter(membership__organization=organization)
         assert users.count() == 2
         assert users.first().id == user1.id
+        assert users.first().name == "user1"
         assert users.last().id == user2.id
+        assert users.last().name == "user2"
+
+        for user in users:
+            assert user in [user1, user2]
