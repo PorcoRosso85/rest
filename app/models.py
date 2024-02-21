@@ -30,7 +30,17 @@ class Organization(models.Model):
     plan = models.CharField(max_length=100, choices=PLAN_OPTIONS, default="free")
     plan_created_at = models.DateTimeField(default=timezone.now)
     plan_updated_at = models.DateTimeField(default=timezone.now)
-    user = models.ManyToManyField(User, related_name="organization")
+
+
+class Membership(models.Model):
+    ROLE_OPTIONS = [("owner", "Owner"), ("admin", "Admin"), ("member", "Member")]
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="membership")
+    organization = models.ForeignKey(
+        Organization, on_delete=models.CASCADE, related_name="membership"
+    )
+    role = models.CharField(max_length=100, default="member", choices=ROLE_OPTIONS)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
 
 def get_default_organization() -> int:

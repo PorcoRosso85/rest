@@ -7,6 +7,7 @@ from app.models import (
     Access,
     ApiKeys,
     Data,
+    Membership,
     Organization,
     PublishmentStatus,
     Space,
@@ -125,77 +126,6 @@ class TestSpaceModel:
         assert space.data.get(id=data2.id)._updated_at is not None
 
 
-class TestUserModel:
-    @pytest.mark.django_db
-    def test_正常系_クエリが成功する場合(self):
-        """クエリが成功する場合"""
-        user = User.objects.create()
-        assert user.id is not None
-
-    @pytest.mark.django_db
-    def test_正常系_関連するorganizationを取得する場合(self):
-        """関連するorganizationを取得する場合"""
-        user = User.objects.create()
-        organization = Organization.objects.create()
-        user.organization.add(organization)
-        assert user.organization.first().id == organization.id
-
-    @pytest.mark.django_db
-    def test_正常系_関連するorganizationとspaceとapikeyを取得する場合(self):
-        """関連するorganizationとapi_keyを取得する場合
-        user[1, 2]が同じorganization[1]に所属している
-        """
-        user1 = User.objects.create()
-        user2 = User.objects.create()
-        organization = Organization.objects.create()
-        user1.organization.add(organization)
-        user2.organization.add(organization)
-        space = Space.objects.create(organization=organization)
-        apikey = ApiKeys.objects.create(space=space)
-
-        assert (
-            user1.organization.first().spaces.first().api_keys.first().id
-            == user2.organization.first().spaces.first().api_keys.first().id
-        )
-
-    @pytest.mark.django_db
-    def test_正常系_関連するorganizationとspaceとapi_keyを取得する場合(self):
-        """関連するorganizationとspaceとapi_keyを取得する場合
-        user[1, 2]が同じorganization[1]に所属している
-        user[3]は異なるorganization[2]に所属している
-        """
-        user1 = User.objects.create()
-        user2 = User.objects.create()
-        user3 = User.objects.create()
-        organization1 = Organization.objects.create()
-        organization2 = Organization.objects.create()
-        space1 = Space.objects.create(organization=organization1)
-        space2 = Space.objects.create(organization=organization2)
-        api_key1 = ApiKeys.objects.create(space=space1)
-        api_key2 = ApiKeys.objects.create(space=space2)
-        user1.organization.add(organization1)
-        user2.organization.add(organization1)
-        user3.organization.add(organization2)
-
-        # user1とuser2が同じorganization1に所属していることを検証
-        assert (
-            user1.organization.first().spaces.first().api_keys.first().id == api_key1.id
-        )
-        assert (
-            user2.organization.first().spaces.first().api_keys.first().id == api_key1.id
-        )
-
-        # user3が異なるorganization2に所属していることを検証
-        assert user3.organization.first().id == organization2.id
-        assert (
-            not user3.organization.first().spaces.first().api_keys.first().id
-            == api_key1.id
-        )
-        assert (
-            user3.organization.first().spaces.first().api_keys.first().id == api_key2.id
-        )
-
-
 class TestDataModel:
     @pytest.mark.django_db
     def test_modelフィールドにはJson形式のデータを保存できる(self):
@@ -218,3 +148,57 @@ class TestDataModel:
         _data.refresh_from_db()
         _data = Data.objects.get(id=_data.id)
         assert _data._published_at is not None
+
+
+class TestMembershipModel:
+    @pytest.mark.django_db
+    def test_正常_関連するorganizationとuserを取得する(self):
+        user = User.objects.create()
+        organization = Organization.objects.create()
+        membership = Membership.objects.create(user=user, organization=organization)
+        assert membership.organization.id == organization.id
+        assert membership.user.id == user.id
+
+
+class TestUserModel:
+    @pytest.mark.django_db
+    def test_正常系_クエリが成功する場合(self):
+        """クエリが成功する場合"""
+        user = User.objects.create()
+        assert user.id is not None
+
+    @pytest.mark.django_db
+    def test_正常_関連するorganizationを取得する(self):
+        user = User.objects.create(name="testuser")
+        organization1 = Organization.objects.create(name="organization1")
+        organization2 = Organization.objects.create(name="organization2")
+        membership1 = Membership.objects.create(user=user, organization=organization1)
+        membership2 = Membership.objects.create(user=user, organization=organization2)
+
+        # userが所属するorganizationを中間テーブルであるMembershipを介して取得
+        organizations = Organization.objects.filter(membership__user=user)
+        assert organizations.count() == 2
+        assert organizations.first().id == organization1.id
+        assert organizations.last().id == organization2.id
+
+
+class TestOrganizationModel:
+    @pytest.mark.django_db
+    def test_正常系_クエリが成功する場合(self):
+        """クエリが成功する場合"""
+        organization = Organization.objects.create()
+        assert organization.id is not None
+
+    @pytest.mark.django_db
+    def test_正常_関連するuserを取得する(self):
+        user1 = User.objects.create(name="user1")
+        user2 = User.objects.create(name="user2")
+        organization = Organization.objects.create(name="organization")
+        membership1 = Membership.objects.create(user=user1, organization=organization)
+        membership2 = Membership.objects.create(user=user2, organization=organization)
+
+        # organizationに所属するuserを中間テーブルであるMembershipを介して取得
+        users = User.objects.filter(membership__organization=organization)
+        assert users.count() == 2
+        assert users.first().id == user1.id
+        assert users.last().id == user2.id
