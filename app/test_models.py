@@ -159,6 +159,12 @@ class TestMembershipModel:
         assert membership.organization.id == organization.id
         assert membership.user.id == user.id
 
+        user_from_database = User.objects.get(id=user.id)
+        organization_from_database = Organization.objects.get(id=organization.id)
+        assert user_from_database.membership.first().id == membership.id
+        membership_from_database = Membership.objects.get(id=membership.id)
+        assert membership_from_database.organization.id == organization.id
+
 
 class TestUserModel:
     @pytest.mark.django_db
