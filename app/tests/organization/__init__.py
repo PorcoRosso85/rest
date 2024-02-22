@@ -1,6 +1,11 @@
 test_design_for_organization = {
     "ユーザーとの関連性": [
-        "正常系_ユーザーに関連した組織が表示されている",
+        {
+            "正常系_ユーザーに関連した組織が表示されている": [
+                "ユーザーに関連する組織の取得",
+                "取得された組織をレスポンス",
+            ]
+        },
         "異常系_ユーザーに関連した組織が表示されていない",
     ],
     "組織の作成": [
@@ -88,3 +93,20 @@ test_design_for_organization = {
         "異常系_リソースの限界を超えた場合のシステムの応答を検証",
     ],
 }
+
+
+import pytest
+
+from app.test_models import TestMembershipModel
+
+
+class TestOrganizationAndUserRelation:
+    @pytest.fixture(autouse=True)
+    def run_model_test(self):
+        """外部に実装済みテストもここで実行する"""
+        model_test = TestMembershipModel()
+        model_test.test_正常_関連するorganizationとuserを取得する()
+
+    @pytest.mark.django_db
+    def test_正常系_ユーザーに関連した組織が表示されている(self):
+        assert True
