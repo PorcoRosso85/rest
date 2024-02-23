@@ -7,8 +7,11 @@ from app.models import (
     Access,
     ApiKeys,
     Data,
+    Membership,
+    Organization,
     PublishmentStatus,
     Space,
+    User,
 )
 
 AttrsType: TypeAlias = Dict[str, Any]
@@ -79,3 +82,40 @@ class SpaceSerializer(serializers.ModelSerializer):
         if re.match(r"^\d+$", attrs["name"]):
             raise serializers.ValidationError("name is invalid")
         return attrs
+
+
+class MembershipSerializer(serializers.ModelSerializer):
+    """membershipを返すシリアライザ"""
+
+    class Meta:
+        model = Membership
+        fields = ["user", "organization", "role", "created_at", "updated_at"]
+
+
+class OrganizationSerializer(serializers.ModelSerializer):
+    """organizationを返すシリアライザ"""
+
+    membership = MembershipSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Organization
+        fields = [
+            "name",
+            "icon",
+            "created_at",
+            "updated_at",
+            "plan",
+            "plan_created_at",
+            "plan_updated_at",
+            "membership",
+        ]
+
+
+class UserSerializer(serializers.ModelSerializer):
+    """userを返すシリアライザ"""
+
+    membership = MembershipSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = User
+        fields = ["name", "created_at", "updated_at", "membership"]

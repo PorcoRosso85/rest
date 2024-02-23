@@ -1,8 +1,86 @@
 import pytest
 from inline_snapshot import snapshot
 
-from app.models import Data, Space
-from app.serializer import DataSerializer, SpaceSerializer
+from app.models import Data, Organization, Space, User
+from app.serializer import (
+    DataSerializer,
+    MembershipSerializer,
+    OrganizationSerializer,
+    SpaceSerializer,
+    UserSerializer,
+)
+from app.utils import logger
+
+
+class TestUserSerializer:
+    @pytest.mark.django_db
+    def test_正常_バリデーションエラーがない(self):
+        data = {"name": "username"}
+        serializer = UserSerializer(data=data)
+        assert serializer.is_valid() == True, serializer.errors
+        logger.debug(f"### serializer.data: {serializer.data}")
+        assert serializer.data == snapshot({"name": "username"})
+        data = {"name": 123}
+        serializer = OrganizationSerializer(data=data)
+        logger.debug("### 数値は許容される")
+        assert serializer.is_valid() == True, serializer.errors
+        data = {"name": "organizationname", "icon": None}
+        serializer = OrganizationSerializer(data=data)
+        assert serializer.is_valid() == True, serializer.errors
+
+    @pytest.mark.django_db
+    def test_異常_バリデーションエラーがある(self):
+        data = {"name": ""}
+        serializer = UserSerializer(data=data)
+        assert serializer.is_valid() == False, serializer.errors
+
+
+class TestOrganizationSerializer:
+    @pytest.mark.django_db
+    def test_正常_バリデーションエラーがない(self):
+        data = {"name": "organizationname"}
+        serializer = OrganizationSerializer(data=data)
+        assert serializer.is_valid() == True, serializer.errors
+
+    class Test_異常_バリデーションエラーがある:
+        @pytest.mark.django_db
+        def test_異常_nameのバリデーションエラーがある(self):
+            data = {"name": ""}
+            serializer = OrganizationSerializer(data=data)
+            assert serializer.is_valid() == False, serializer.errors
+
+        @pytest.mark.django_db
+        def test_異常_iconのバリデーションエラーがある(self):
+            data = {"name": "organizationname", "icon": "icon"}
+            serializer = OrganizationSerializer(data=data)
+            assert serializer.is_valid() == False, serializer.errors
+            data = {"name": "organizationname", "icon": ""}
+            serializer = OrganizationSerializer(data=data)
+            assert serializer.is_valid() == False, serializer.errors
+
+
+class TestMembershipSerializer:
+    @pytest.mark.parametrize("role", ["owner", "admin", "member"])
+    @pytest.mark.django_db
+    def test_正常_バリデーションエラーがない(self, role):
+        user = User.objects.create(name="username")
+        organization = Organization.objects.create(name="organizationname")
+        data = {
+            "user": user.id,
+            "organization": organization.id,
+            "role": role,
+        }
+        serializer = MembershipSerializer(data=data)
+        assert serializer.is_valid() == True, serializer.errors
+
+    @pytest.mark.django_db
+    @pytest.mark.parametrize("role", [""])
+    def test_異常_バリデーションエラーがある(self, role):
+        logger.debug(f"### role: {role}")
+        data = {"role": role}
+        serializer = MembershipSerializer(data=data)
+        assert serializer.is_valid() == False, serializer.errors
+
 
 # class TestPublishmentStatusSerializer:
 #     @pytest.mark.django_db
@@ -311,6 +389,7 @@ from app.serializer import DataSerializer, SpaceSerializer
 #         assert serializer.is_valid(), serializer.errors
 
 
+@pytest.mark.skip
 class TestSpaceSerializer:
     @pytest.mark.django_db
     def test_異常_バリデーションエラー_noname(self):

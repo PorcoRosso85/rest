@@ -23,7 +23,7 @@ class Organization(models.Model):
     ]
 
     id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, blank=False)
     icon = models.ImageField(upload_to="icon/", blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

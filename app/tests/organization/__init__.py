@@ -98,15 +98,24 @@ test_design_for_organization = {
 import pytest
 
 from app.test_models import TestMembershipModel
+from app.utils import logger
 
 
 class TestOrganizationAndUserRelation:
-    @pytest.fixture(autouse=True)
+    @pytest.fixture
     def run_model_test(self):
         """外部に実装済みテストもここで実行する"""
-        model_test = TestMembershipModel()
-        model_test.test_正常_関連するorganizationとuserを取得する()
+        test_membership_model = TestMembershipModel()
+        test_membership_model.test_正常_関連するorganizationとuserを取得する()
+
+    @pytest.fixture
+    def run_serializer_test(self):
+        pass
 
     @pytest.mark.django_db
+    @pytest.mark.usefixtures("run_model_test")
     def test_正常系_ユーザーに関連した組織が表示されている(self):
+        logger.debug("関連するorganizationとuserのテストを実行します")
+
+        logger.debug("取得された組織をレスポンスできているか確認します")
         assert True
