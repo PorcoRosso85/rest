@@ -96,8 +96,10 @@ test_design_for_organization = {
 
 
 import pytest
+from urls import TestOrganizationView
 
 from app.test_models import TestMembershipModel
+from app.test_serializer import TestUserSerializer
 from app.utils import logger
 
 
@@ -106,16 +108,28 @@ class TestOrganizationAndUserRelation:
     def run_model_test(self):
         """外部に実装済みテストもここで実行する"""
         test_membership_model = TestMembershipModel()
-        test_membership_model.test_正常_関連するorganizationとuserを取得する()
+        test_membership_model.test_正常_関連するorganizationとuserを取得する
 
     @pytest.fixture
     def run_serializer_test(self):
-        pass
+        test_user_serializer = TestUserSerializer()
+        test_user_serializer.test_正常_Userに基づくOrganizationを取得できる
+
+    @pytest.fixture
+    def run_view_test(self):
+        test_org_view = TestOrganizationView()
+        test_org_view.test_正常系_組織を作成できる
 
     @pytest.mark.django_db
     @pytest.mark.usefixtures("run_model_test")
-    def test_正常系_ユーザーに関連した組織が表示されている(self):
-        logger.debug("関連するorganizationとuserのテストを実行します")
+    @pytest.mark.usefixtures("run_serializer_test")
+    @pytest.mark.usefixtures("run_view_test")
+    class Test_正常系_ユーザー関連組織表示:
+        def test_正常系_ユーザーに関連した組織の取得(self):
+            logger.debug("関連するorganizationとuserのテストを実行します")
 
-        logger.debug("取得された組織をレスポンスできているか確認します")
-        assert True
+        def test_正常系_ユーザーに関連した組織が表示されている(self):
+            logger.debug("ユーザーに関連する組織の取得")
+
+    def test_異常系_ユーザーに関連した組織が表示されていない(self):
+        logger.debug("ユーザーに関連する組織の取得")

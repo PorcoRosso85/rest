@@ -16,9 +16,10 @@ Including another URLconf
 """
 
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, reverse
 
 from app import views
+from app.models import Organization
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -62,4 +63,61 @@ urlpatterns = [
         ),
     ),
     path("cookie/", views.CookieView.as_view()),
+    path(
+        "organization/",
+        views.OrganizationView.as_view({"get": "list", "post": "create"}),
+        name="organization-list",
+    ),
+    path(
+        "organization/<int:pk>/",
+        views.OrganizationView.as_view(
+            {"get": "retrieve", "put": "update", "delete": "destroy"}
+        ),
+        name="organization-detail",
+    ),
 ]
+
+import pytest
+from rest_framework.response import Response
+from rest_framework.test import APIClient
+
+from app.utils import logger
+
+
+class TestOrganizationView:
+    def setup_method(self):
+        self.client = APIClient()
+        self.organization_instance = Organization.objects.create(name="test org")
+
+    @pytest.mark.django_db
+    def test_正常系_組織を作成できる(self):
+        response: Response = self.client.post(
+            reverse("organization-list"), data={"name": "new org"}, format="json"
+        )
+        assert response.status_code == 201
+        assert response.data["name"] == "new org"
+
+    @pytest.mark.django_db
+    def test_正常系_組織一覧を取得できる(self):
+        response: Response = self.client.get(reverse("organization-list"))
+        assert response.status_code == 200
+        assert len(response.data) > 0
+
+    @pytest.mark.django_db
+    @pytest.mark.parametrize(
+        "data, expected_data_name",
+        [
+            ({"name": "new org"}, "new org"),
+            ({"name": "another org"}, "another org"),
+        ],
+    )
+    def test_正常系_組織を更新できる(self, data, expected_data_name):
+        org_id = self.organization_instance.id
+        logger.debug(f"### data: {data}")
+        response: Response = self.client.put(
+            reverse("organization-detail", kwargs={"pk": org_id}),
+            data=data,
+            format="json",
+        )
+        assert response.status_code == 200
+        assert response.data["name"] == expected_data_name
