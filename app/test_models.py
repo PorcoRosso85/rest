@@ -235,3 +235,11 @@ class TestOrganizationModel:
 
         for user in users:
             assert user in [user1, user2]
+
+    @pytest.mark.django_db
+    def test異常_関連するユーザーが存在しない(self):
+        pass
+
+    @pytest.mark.django_db
+    def test異常_関連するユーザーはいるが取得できない(self):
+        pass
