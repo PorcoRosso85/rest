@@ -4,8 +4,13 @@ from rest_framework.test import APIClient
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
-from app.models import Access, ApiKeys, Organization
-from app.serializer import AccessSerializer, ApiKeysSerializer, OrganizationSerializer
+from app.models import Access, ApiKeys, Organization, User
+from app.serializer import (
+    AccessSerializer,
+    ApiKeysSerializer,
+    OrganizationSerializer,
+    UserSerializer,
+)
 from app.utils import logger
 
 
@@ -168,3 +173,7 @@ class TestSetCookieView:
 class OrganizationView(ModelViewSet):
     queryset = Organization.objects.all()
     serializer_class = OrganizationSerializer
+    
+class UserView(ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer

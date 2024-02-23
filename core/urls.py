@@ -19,7 +19,7 @@ from django.contrib import admin
 from django.urls import path, reverse
 
 from app import views
-from app.models import Organization
+from app.models import Organization, User
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -75,6 +75,11 @@ urlpatterns = [
         ),
         name="organization-detail",
     ),
+    path(
+        "user/",
+        views.UserView.as_view({"get": "list", "post": "create"}),
+        name="user-list",
+    ),
 ]
 
 import pytest
@@ -90,7 +95,7 @@ class TestOrganizationView:
         self.organization_instance = Organization.objects.create(name="test org")
 
     @pytest.mark.django_db
-    def test_正常系_組織を作成できる(self):
+    def test200_組織を作成できる(self):
         response: Response = self.client.post(
             reverse("organization-list"), data={"name": "new org"}, format="json"
         )
@@ -121,3 +126,34 @@ class TestOrganizationView:
         )
         assert response.status_code == 200
         assert response.data["name"] == expected_data_name
+
+    @pytest.mark.django_db
+    def test異常_ユーザーIDが提供されていないレスポンスエラー(self):
+        pass
+
+
+class TestUserView:
+    def setup_method(self):
+        self.client = APIClient()
+        self.user_instance = User.objects.create(name="test username")
+
+    @pytest.mark.django_db
+    def test200_ユーザー一覧を取得できる(self):
+        response: Response = self.client.get(reverse("user-list"))
+        assert response.status_code == 200
+        assert len(response.data) > 0
+
+    @pytest.mark.django_db
+    def test正常_ユーザーを作成できる(self):
+        response: Response = self.client.post(
+            reverse("user-list"), data={"name": "new username"}, format="json"
+        )
+        assert response.status_code == 201
+        assert response.data["name"] == "new username"
+
+    @pytest.mark.django_db
+    def test200_ユーザーが存在しない(self):
+        self.user_instance.delete()
+        response: Response = self.client.get(reverse("user-list"))
+        assert response.status_code == 200
+        assert len(response.data) == 0
