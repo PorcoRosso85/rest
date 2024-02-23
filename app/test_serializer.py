@@ -109,6 +109,10 @@ class TestUserSerializer:
         serialized_organization = organization_serializer.data
         assert serialized_organization["name"] == "organizationname"
 
+    @pytest.mark.django_db
+    class Test_異常_ユーザーに関連するOrganizationが取得できていない:
+        pass
+
 
 # class TestPublishmentStatusSerializer:
 #     @pytest.mark.django_db
