@@ -1,21 +1,26 @@
 import uuid
 
+import pytest
 from django.db import models
 from django.utils import timezone
 
 
 class User(models.Model):
-    """Userの情報を管理する"""
-
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
 
-class Organization(models.Model):
-    """Userの所属先であり 複数のSpaceを持つことができる"""
+def get_default_user() -> int:
+    user = User.objects.first()
+    if user:
+        return user.id
+    new_user = User.objects.create()
+    return new_user.id
 
+
+class Organization(models.Model):
     PLAN_OPTIONS = [
         ("free", "Free"),
         ("standard", "Standard"),
@@ -31,10 +36,31 @@ class Organization(models.Model):
     plan_created_at = models.DateTimeField(default=timezone.now)
     plan_updated_at = models.DateTimeField(default=timezone.now)
 
+    # 最低一人のメンバーをMembershipで関連しているかどうかチェック
+    def save(self, *args, **kwargs):
+        user = kwargs.pop("user", None)
+        super().save(*args, **kwargs)
+        if user is not None:
+            membership = Membership.objects.filter(user=user, organization=self)
+            if not membership.exists():
+                Membership.objects.create(user=user, organization=self, role="owner")
+
+
+class TestOrganizationModel:
+    @pytest.mark.django_db
+    def test200_作成可能(self):
+        organization = Organization.objects.create(name="test")
+        assert organization.id is not None
+
 
 class Membership(models.Model):
     ROLE_OPTIONS = [("owner", "Owner"), ("admin", "Admin"), ("member", "Member")]
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="membership")
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="membership",
+        default=get_default_user,  # type: ignore
+    )
     organization = models.ForeignKey(
         Organization, on_delete=models.CASCADE, related_name="membership"
     )

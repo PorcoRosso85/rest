@@ -165,6 +165,14 @@ class TestMembershipModel:
         membership_from_database = Membership.objects.get(id=membership.id)
         assert membership_from_database.organization.id == organization.id
 
+    @pytest.mark.django_db
+    def test200_組織を作成したユーザーがオーナーとなっている(self):
+        user = User.objects.create(name="owneruser")
+        organization = Organization.objects.create(name="organization")
+        organization.save(user=user)
+        assert organization is not None
+        assert organization.membership.first().user.id == user.id
+
 
 class TestUserModel:
     @pytest.mark.django_db
@@ -211,35 +219,54 @@ class TestUserModel:
 
 
 class TestOrganizationModel:
+    def setup_method(self):
+        self.user1 = User.objects.create(name="user1")
+        self.user2 = User.objects.create(name="user2")
+        self.organization = Organization.objects.create()
+
     @pytest.mark.django_db
     def test_正常系_クエリが成功する場合(self):
         """クエリが成功する場合"""
-        organization = Organization.objects.create()
-        assert organization.id is not None
+        assert self.organization.id is not None
 
     @pytest.mark.django_db
     def test_正常_関連するuserを取得する(self):
-        user1 = User.objects.create(name="user1")
-        user2 = User.objects.create(name="user2")
-        organization = Organization.objects.create(name="organization")
-        membership1 = Membership.objects.create(user=user1, organization=organization)
-        membership2 = Membership.objects.create(user=user2, organization=organization)
+        membership1 = Membership.objects.create(
+            user=self.user1, organization=self.organization
+        )
+        membership2 = Membership.objects.create(
+            user=self.user2, organization=self.organization
+        )
 
         # organizationに所属するuserを中間テーブルであるMembershipを介して取得
-        users = User.objects.filter(membership__organization=organization)
+        users = User.objects.filter(membership__organization=self.organization)
         assert users.count() == 2
-        assert users.first().id == user1.id
+        assert users.first().id == self.user1.id
         assert users.first().name == "user1"
-        assert users.last().id == user2.id
+        assert users.last().id == self.user2.id
         assert users.last().name == "user2"
 
         for user in users:
-            assert user in [user1, user2]
+            assert user in [self.user1, self.user2]
 
     @pytest.mark.django_db
-    def test異常_関連するユーザーが存在しない(self):
+    def test400_関連するユーザーが存在しない(self):
         pass
 
     @pytest.mark.django_db
-    def test異常_関連するユーザーはいるが取得できない(self):
+    def test500_関連するユーザーはいるが取得できない(self):
+        pass
+
+    @pytest.mark.django_db
+    def test200_関連する組織が存在しない(self):
+        """ユーザーは0以上の組織に所属する"""
+        pass
+
+    @pytest.mark.django_db
+    def test400_オーナーユーザーが存在しない(self):
+        """組織は1以上のオーナーユーザーを所属させる"""
+        pass
+
+    @pytest.mark.django_db
+    def test200_最低1人のオーナーが存在する(self):
         pass
