@@ -4,11 +4,13 @@ from rest_framework.test import APIClient
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
-from app.models import Access, ApiKeys, Organization, User
+from app.models import Access, ApiKeys, Organization, Space, User
 from app.serializer import (
     AccessSerializer,
     ApiKeysSerializer,
     OrganizationSerializer,
+    OrganizationSpaceSerializer,
+    SpaceSerializer,
     UserSerializer,
 )
 from app.utils import logger
@@ -173,7 +175,22 @@ class TestSetCookieView:
 class OrganizationView(ModelViewSet):
     queryset = Organization.objects.all()
     serializer_class = OrganizationSerializer
-    
+
+
+class OrganizationSpaceView(ModelViewSet):
+    serializer_class = OrganizationSpaceSerializer
+
+    def get_queryset(self):
+        organization_id = self.kwargs["pk"]
+        organization = Organization.objects.get(id=organization_id)
+        return organization.spaces.all()
+
+
+class SpaceView(ModelViewSet):
+    queryset = Space.objects.all()
+    serializer_class = SpaceSerializer
+
+
 class UserView(ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer

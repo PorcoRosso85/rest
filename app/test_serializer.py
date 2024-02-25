@@ -6,6 +6,7 @@ from app.serializer import (
     DataSerializer,
     MembershipSerializer,
     OrganizationSerializer,
+    OrganizationSpaceSerializer,
     SpaceSerializer,
     UserSerializer,
 )
@@ -661,3 +662,27 @@ class TestDataSerializer:
         # データの確認
         with pytest.raises(Data.DoesNotExist):
             Data.objects.get(id=data_instance.id)
+
+
+class TestOrganizationSpaceSerializer:
+    def setup_method(self):
+        self.organization_instance = Organization.objects.create(name="test org")
+        self.space_instance = Space.objects.create(
+            name="test space", organization=self.organization_instance
+        )
+        self.serializer = OrganizationSpaceSerializer(instance=self.space_instance)
+
+    @pytest.mark.django_db
+    def test200_期待するフィールドが含まれている(self):
+        data = self.serializer.data
+        assert "id" in data
+
+    @pytest.mark.django_db
+    def test200_idが期待と一致する(self):
+        data = self.serializer.data
+        assert data["id"] == self.space_instance.id
+
+    @pytest.mark.django_db
+    def test200_nameが期待と一致する(self):
+        data = self.serializer.data
+        assert data["name"] == self.space_instance.name

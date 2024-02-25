@@ -111,6 +111,14 @@ class OrganizationSerializer(serializers.ModelSerializer):
         ]
 
 
+class OrganizationSpaceSerializer(serializers.ModelSerializer):
+    """organization.idに関連するspaceを返すシリアライザ"""
+
+    class Meta:
+        model = Space
+        fields = ["id", "name"]
+
+
 class UserSerializer(serializers.ModelSerializer):
     """userを返すシリアライザ"""
 

@@ -19,7 +19,6 @@ from django.contrib import admin
 from django.urls import path, reverse
 
 from app import views
-from app.models import Organization, User
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -76,6 +75,11 @@ urlpatterns = [
         name="organization-detail",
     ),
     path(
+        "organization/<int:pk>/spaces/",
+        views.OrganizationSpaceView.as_view({"get": "list"}),
+        name="organization-space-list",
+    ),
+    path(
         "user/",
         views.UserView.as_view({"get": "list", "post": "create"}),
         name="user-list",
@@ -86,6 +90,7 @@ import pytest
 from rest_framework.response import Response
 from rest_framework.test import APIClient
 
+from app.models import Organization, Space, User
 from app.utils import logger
 
 
@@ -94,9 +99,12 @@ class TestOrganizationView:
         self.client = APIClient()
         self.organization_instance = Organization.objects.create(name="test org")
         self.user_instance = User.objects.create(name="test user")
+        self.space_instance = Space.objects.create(
+            name="test space", organization=self.organization_instance
+        )
 
     @pytest.mark.django_db
-    def test200_組織を作成できる(self):
+    def test200_組織を作成しレスポンスできる(self):
         response: Response = self.client.post(
             reverse("organization-list"), data={"name": "new org"}, format="json"
         )
@@ -104,11 +112,16 @@ class TestOrganizationView:
         assert response.data["name"] == "new org"
 
     @pytest.mark.django_db
-    def test200_最低1人のオーナーが存在する(self):
+    def test200_作成したユーザーとオーナーが一致する(self):
         self.organization_instance.save(user=self.user_instance)
         membership = self.organization_instance.membership.first()
         logger.debug(f"### membership: {membership}")
         assert membership is not None
+        assert membership.user == self.user_instance
+
+    @pytest.mark.django_db
+    def test400_ユーザーが存在するが取得できない(self):
+        pass
 
     @pytest.mark.django_db
     def test200_組織一覧を取得できる(self):
@@ -133,6 +146,10 @@ class TestOrganizationView:
         assert response.data["name"] == "test org"
 
     @pytest.mark.django_db
+    def test400_組織情報が取得できていない(self):
+        pass
+
+    @pytest.mark.django_db
     @pytest.mark.parametrize(
         "data, expected_data_name",
         [
@@ -154,6 +171,17 @@ class TestOrganizationView:
     @pytest.mark.django_db
     def test異常_ユーザーIDが提供されていないレスポンスエラー(self):
         pass
+
+    @pytest.mark.django_db
+    def test200_組織に属するスペースの一覧が取得できる(self):
+        response: Response = self.client.get(
+            reverse(
+                "organization-space-list", kwargs={"pk": self.organization_instance.id}
+            ),
+        )
+        assert response.status_code == 200
+        assert len(response.data) > 0
+        assert len(response.data) == 1
 
 
 class TestUserView:
