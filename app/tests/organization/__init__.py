@@ -13,7 +13,7 @@ test_design_for_organization = {
         },
         {
             "取得された組織をレスポンスできる": [
-                TestOrganizationSerializer.test_正常_バリデーションエラーがない,
+                TestOrganizationSerializer.test200_バリデーションエラーがない,
                 TestOrganizationView.test200_組織を作成できる,
             ]
         },
@@ -21,25 +21,35 @@ test_design_for_organization = {
     "ユーザーに関連した組織が表示されていない": [
         {
             "ユーザーに関連する組織の取得できない": [
-                TestOrganizationModel.test異常_関連するユーザーが存在しない,
-                TestOrganizationModel.test異常_関連するユーザーはいるが取得できない,
+                TestOrganizationModel.test200_関連する組織が存在しない,
+                TestOrganizationModel.test400_関連するユーザーが存在しない,
+                TestOrganizationModel.test500_関連するユーザーはいるが取得できない,
             ]
         },
         {
+            "リクエストができない": [],
             "レスポンスができない": [
-                "ユーザーIDが提供されていないレスポンスエラー",
+                # "ユーザーが存在しないレスポンスエラー",
                 TestOrganizationView.test異常_ユーザーIDが提供されていないレスポンスエラー,
-                "ユーザーが存在しないレスポンスエラー",
-                "ユーザーがどの組織にも関連していないレスポンスエラー",
-                "ユーザーに関連する組織が存在しないレスポンスエラー",
-            ]
+                # "ユーザーがどの組織にも関連していないレスポンスエラー",
+                # "ユーザーに関連する組織が存在しないレスポンスエラー",
+            ],
         },
     ],
     "組織の作成": [
-        "組織が作成される",
-        "組織が作成されない",
-        "作成したユーザーが、その組織のオーナーになる",
-        "作成したユーザーが、その組織のオーナーになっていない",
+        {
+            "作成したユーザーが、その組織のオーナーになる": [
+                TestOrganizationModel.test200_最低1人のオーナーが存在する
+            ]
+        },
+        {"組織が作成されない": []},
+        {
+            "作成したユーザーが、その組織のオーナーになっていない": [
+                TestOrganizationModel.test400_関連するユーザーが存在しない,
+                TestOrganizationModel.test500_関連するユーザーはいるが取得できない,
+                TestOrganizationModel.test400_オーナーユーザーが存在しない,
+            ]
+        },
     ],
     "組織一覧の取得": [
         "組織一覧が取得できる",
