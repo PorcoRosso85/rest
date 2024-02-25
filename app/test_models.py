@@ -255,11 +255,7 @@ class TestOrganizationModel:
             assert user in [self.user1, self.user2]
 
     @pytest.mark.django_db
-    def test400_関連するユーザーが存在しない(self):
-        pass
-
-    @pytest.mark.django_db
-    def test500_関連するユーザーはいるが取得できない(self):
+    def test500_関連するユーザーが存在しない(self):
         pass
 
     @pytest.mark.django_db
