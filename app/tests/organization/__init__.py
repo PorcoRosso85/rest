@@ -5,30 +5,21 @@ from app.test_serializer import TestOrganizationSerializer
 
 test_design_for_organization = {
     "組織の作成": [
-        {
-            "作成したユーザーが、その組織のオーナーになる": [
-                TestOrganizationModel.test200_最低1人のオーナーが存在する,
-                TestOrganizationView.test200_最低1人のオーナーが存在する,
-            ]
-        },
+        TestOrganizationModel.test200_最低1人のオーナーが存在する,
+        TestOrganizationView.test200_作成したユーザーとオーナーが一致する,
         {"組織が作成されない": []},
         {
             "作成したユーザーが、その組織のオーナーになっていない": [
-                TestOrganizationModel.test400_関連するユーザーが存在しない,
-                TestOrganizationModel.test500_関連するユーザーはいるが取得できない,
+                TestOrganizationModel.test500_関連するユーザーが存在しない,
                 TestOrganizationModel.test400_オーナーユーザーが存在しない,
             ]
         },
     ],
     "組織一覧の取得": [
-        {
-            "組織一覧が取得できる": [
-                TestOrganizationModel.test200_クエリが成功する場合,
-                TestOrganizationModel.test200_組織一覧が取得できる,
-                TestOrganizationView.test200_組織一覧を取得できる,
-            ]
-        },
-        "組織一覧が取得できていない",
+        TestOrganizationModel.test200_クエリが成功する場合,
+        TestOrganizationModel.test200_組織一覧が取得できる,
+        TestOrganizationView.test200_組織一覧を取得できる,
+        {"組織一覧が取得できない": []},
     ],
     "ユーザーに関連した組織が表示されている": [
         {
@@ -40,7 +31,7 @@ test_design_for_organization = {
         {
             "取得された組織をレスポンスできる": [
                 TestOrganizationSerializer.test200_バリデーションエラーがない,
-                TestOrganizationView.test200_組織を作成できる,
+                TestOrganizationView.test200_組織を作成しレスポンスできる,
             ]
         },
     ],
@@ -48,8 +39,8 @@ test_design_for_organization = {
         {
             "ユーザーに関連する組織の取得できない": [
                 TestOrganizationModel.test200_関連する組織が存在しない,
-                TestOrganizationModel.test400_関連するユーザーが存在しない,
-                TestOrganizationModel.test500_関連するユーザーはいるが取得できない,
+                TestOrganizationModel.test500_関連するユーザーが存在しない,
+                TestOrganizationView.test400_ユーザーが存在するが取得できない,
             ]
         },
         {
@@ -63,15 +54,11 @@ test_design_for_organization = {
         },
     ],
     "組織情報の取得": [
-        {
-            "組織情報が取得できる": [
-                TestOrganizationView.test200_組織情報を取得できる,
-            ]
-        },
-        "組織情報が取得できていない",
+        TestOrganizationView.test200_組織情報を取得できる,
+        TestOrganizationView.test400_組織情報が取得できていない,
     ],
     "組織に関連するスペースの取得": [
-        "組織に属するスペースの一覧も取得できる",
+        TestOrganizationView.test200_組織に属するスペースの一覧が取得できる,
         "組織に属するスペースの一覧が取得できていない",
     ],
     "組織情報の更新": [
