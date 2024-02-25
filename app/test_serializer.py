@@ -47,7 +47,7 @@ class TestMembershipSerializer:
 
 class TestOrganizationSerializer:
     @pytest.mark.django_db
-    def test_正常_バリデーションエラーがない(self):
+    def test200_バリデーションエラーがない(self):
         data = {"name": "organizationname"}
         serializer = OrganizationSerializer(data=data)
         assert serializer.is_valid() == True, serializer.errors
