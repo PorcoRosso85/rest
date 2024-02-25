@@ -93,6 +93,7 @@ class TestOrganizationView:
     def setup_method(self):
         self.client = APIClient()
         self.organization_instance = Organization.objects.create(name="test org")
+        self.user_instance = User.objects.create(name="test user")
 
     @pytest.mark.django_db
     def test200_組織を作成できる(self):
@@ -103,10 +104,33 @@ class TestOrganizationView:
         assert response.data["name"] == "new org"
 
     @pytest.mark.django_db
-    def test_正常系_組織一覧を取得できる(self):
+    def test200_最低1人のオーナーが存在する(self):
+        self.organization_instance.save(user=self.user_instance)
+        membership = self.organization_instance.membership.first()
+        logger.debug(f"### membership: {membership}")
+        assert membership is not None
+
+    @pytest.mark.django_db
+    def test200_組織一覧を取得できる(self):
         response: Response = self.client.get(reverse("organization-list"))
         assert response.status_code == 200
         assert len(response.data) > 0
+
+    @pytest.mark.skip("組織が存在しない場合のテストを実装する")
+    @pytest.mark.django_db
+    def test200_組織が存在しない(self):
+        self.organization_instance.delete()
+        response: Response = self.client.get(reverse("organization-list"))
+        assert response.status_code == 200
+        assert len(response.data) == 0
+
+    @pytest.mark.django_db
+    def test200_組織情報を取得できる(self):
+        response: Response = self.client.get(
+            reverse("organization-detail", kwargs={"pk": self.organization_instance.id})
+        )
+        assert response.status_code == 200
+        assert response.data["name"] == "test org"
 
     @pytest.mark.django_db
     @pytest.mark.parametrize(

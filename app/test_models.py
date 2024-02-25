@@ -223,11 +223,16 @@ class TestOrganizationModel:
         self.user1 = User.objects.create(name="user1")
         self.user2 = User.objects.create(name="user2")
         self.organization = Organization.objects.create()
+        self.organization2 = Organization.objects.create()
 
     @pytest.mark.django_db
-    def test_正常系_クエリが成功する場合(self):
+    def test200_クエリが成功する場合(self):
         """クエリが成功する場合"""
         assert self.organization.id is not None
+
+    @pytest.mark.django_db
+    def test200_組織一覧が取得できる(self):
+        assert Organization.objects.all().count() > 1
 
     @pytest.mark.django_db
     def test_正常_関連するuserを取得する(self):
