@@ -84,6 +84,17 @@ urlpatterns = [
         name="organization-update-owner",
     ),
     path(
+        "organization/<int:pk>/update_membership/",
+        views.OrganizationView.as_view(
+            {
+                "post": "add_membership",
+                "put": "update_membership",
+                "delete": "remove_membership",
+            }
+        ),
+        name="organization-update-membership",
+    ),
+    path(
         "organization/<int:pk>/spaces/",
         views.OrganizationSpaceView.as_view({"get": "list"}),
         name="organization-space-list",

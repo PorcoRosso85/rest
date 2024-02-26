@@ -121,7 +121,7 @@ class TestOrganizationView:
         # assert response.data["membership"] == self.user_instance.id
 
     @pytest.mark.django_db
-    def test400_組織オーナーを更新できる(self):
+    def test200_組織オーナーを更新できる(self):
         self.organization_instance.save(user=self.user_instance)
         existing_owner = self.organization_instance.membership.first()
         assert existing_owner is not None
@@ -170,6 +170,24 @@ class TestOrganizationView:
         new_owner = self.organization_instance.membership.filter(user=new_user).first()
         assert new_owner is not None
         assert new_owner.role == "owner"
+
+    @pytest.mark.django_db
+    def test200_組織メンバーの追加ができる(self):
+        new_user = User.objects.create(name="new user")
+        role = "member"
+        response = self.client.post(
+            reverse(
+                "organization-update-membership",
+                kwargs={"pk": self.organization_instance.id},
+            ),
+            data={"user_id": new_user.id, "role": role},
+            format="json",
+        )
+        assert response.status_code == 201
+        memberships = response.data["membership"]
+        for membership in memberships:
+            if membership["user"] == new_user.id:
+                assert membership["role"] == role
 
 
 class TestUserView:
