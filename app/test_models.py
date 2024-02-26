@@ -169,7 +169,7 @@ class TestMembershipModel:
     def test200_組織を作成したユーザーがオーナーとなっている(self):
         user = User.objects.create(name="owneruser")
         organization = Organization.objects.create(name="organization")
-        organization.save(user=user)
+        organization.create(user=user)
         assert organization is not None
         assert organization.membership.first().user.id == user.id
 
