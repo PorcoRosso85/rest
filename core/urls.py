@@ -68,7 +68,7 @@ urlpatterns = [
         name="organization-list",
     ),
     path(
-        "organization/<int:pk>/",
+        "organization/<int:pk>/detail/",
         views.OrganizationView.as_view(
             {"get": "retrieve", "put": "update", "delete": "destroy"}
         ),
@@ -98,6 +98,18 @@ urlpatterns = [
             }
         ),
         name="organization-update-membership",
+    ),
+    path(
+        "organization/<int:pk>/icon/",
+        views.OrganizationView.as_view(
+            {
+                "get": "get_icon_url",
+                "post": "upload_icon",
+                "put": "upload_icon",
+                "delete": "remove_icon",
+            }
+        ),
+        name="organization-icon",
     ),
     path(
         "organization/<int:pk>/spaces/",

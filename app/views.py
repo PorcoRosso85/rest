@@ -231,6 +231,26 @@ class OrganizationView(ModelViewSet):
         except User.DoesNotExist:
             return Response({"error": "User not found"}, status=404)
 
+    def upload_icon(self, request, *args, **kwargs):
+        try:
+            organization = self.get_object()
+            icon = request.data.get("icon")
+            organization.upload_icon(icon)
+            serializer = self.get_serializer(organization)
+            return Response(serializer.data)
+        except Exception:
+            return Response({"error": "Unexpected Error"}, status=500)
+
+    def get_icon_url(self, request, *args, **kwargs):
+        organization = self.get_object()
+        icon_url = organization.get_icon_url()
+        return Response({"icon_url": icon_url})
+
+    def remove_icon(self, request, *args, **kwargs):
+        organization = self.get_object()
+        organization.remove_icon()
+        return Response({"message": "Icon removed"})
+
 
 class OrganizationSpaceView(ModelViewSet):
     serializer_class = OrganizationSpaceSerializer

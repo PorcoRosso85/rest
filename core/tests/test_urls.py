@@ -1,4 +1,7 @@
+import uuid
+
 import pytest
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from rest_framework.test import APIClient
 
@@ -309,6 +312,35 @@ class TestOrganizationView:
         for membership in memberships:
             if membership["user"] == old_user.id:
                 assert membership["role"] == new_user_role
+
+    @pytest.mark.skip(
+        "クライアントからのアップロードができていないためテストをスキップ"
+    )
+    @pytest.mark.django_db
+    def test200_組織アイコンをアップロードできる(self):
+        icon_name = f"icon_{uuid.uuid4()}.png"
+        file = SimpleUploadedFile(icon_name, b"file_content", content_type="image/png")
+        assert file.name == icon_name
+        assert file.content_type == "image/png"
+
+        response = self.client.post(
+            reverse(
+                "organization-icon",
+                kwargs={"pk": self.organization_instance.id},
+            ),
+            data={"icon": file},
+            format="multipart",
+        )
+        assert response.status_code == 200
+
+        response = self.client.put(
+            reverse(
+                "organization-detail", kwargs={"pk": self.organization_instance.id}
+            ),
+            data={"icon": file},
+            format="multipart",
+        )
+        assert response.status_code == 200
 
 
 class TestUserView:

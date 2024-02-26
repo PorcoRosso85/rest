@@ -1,3 +1,4 @@
+from app.models import TestOrganizationModel as TOM
 from app.test_models import TestMembershipModel, TestOrganizationModel
 from app.test_serializer import TestOrganizationSerializer
 from core.tests.test_urls import TestOrganizationView, TestUserView
@@ -62,35 +63,20 @@ test_design_for_organization = {
         "組織に属するスペースの一覧が取得できていない",
     ],
     "組織情報の更新": [
+        TestOrganizationView.test200_組織名を更新できる,
+        TestOrganizationView.test200_組織オーナーを更新できる,
+        TestOrganizationView.test200_組織メンバーの追加ができる,
+        TestOrganizationView.test200_組織メンバーの削除ができる,
         {
-            "組織情報が更新できる": [
-                TestOrganizationView.test200_組織名を更新できる,
-                TestOrganizationView.test200_組織オーナーを更新できる,
-                TestOrganizationView.test200_組織メンバーの追加ができる,
-                TestOrganizationView.test200_組織メンバーの削除ができる,
-                {
-                    "組織メンバーが存在しない": [
-                        TestOrganizationView.test400_組織メンバーの削除ができない
-                    ]
-                },
-                TestOrganizationView.test200_組織メンバーを更新できる,
+            "組織メンバーが存在しない": [
+                TestOrganizationView.test400_組織メンバーの削除ができない
             ]
         },
-        "組織情報が更新できない",
-        {
-            "組織名が更新できる": [
-                "組織名のバリデーションが正しい",
-                "更新後の組織名が正しい",
-            ]
-        },
-        "組織名が更新できない",
-        {
-            "組織アイコンが更新できる": [
-                "組織アイコンのアップロードができる",
-                "組織アイコンの削除ができる",
-            ]
-        },
-        "組織アイコンが更新できない",
+        TestOrganizationView.test200_組織メンバーを更新できる,
+        TOM.test200_組織アイコンをサーバーに保存および取得ができる,
+        TestOrganizationView.test200_組織アイコンをアップロードできる,
+        "組織アイコンを取得できる",
+        "組織アイコンを削除できる",
     ],
     "組織の削除": [
         "認証されたオーナーにより組織が削除される",

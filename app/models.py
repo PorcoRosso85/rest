@@ -1,6 +1,7 @@
 import uuid
 
 import pytest
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import models
 from django.utils import timezone
 
@@ -70,6 +71,17 @@ class Organization(models.Model):
         else:
             raise ValueError("membership not found")
 
+    def upload_icon(self, icon):
+        self.icon = icon
+        self.save()
+
+    def get_icon_url(self):
+        return self.icon.url
+
+    def remove_icon(self):
+        self.icon.delete()
+        # []check ストレージからの削除はおこなうか
+
 
 class TestOrganizationModel:
     @pytest.mark.django_db
@@ -109,8 +121,43 @@ class TestOrganizationModel:
         assert old_owner.first().role == "member"
         assert old_owner.count() == memberships.count()
 
+        # []todo
         # ownerは一人しか存在しない
         # assert organization.membership.role.filter(user=user).count() == 0
+
+    @pytest.mark.django_db
+    def test200_組織アイコンをサーバーに保存および取得ができる(self):
+        file = SimpleUploadedFile("icon.png", b"file_content", content_type="image/png")
+        organization = Organization.objects.create(name="test", icon=file)
+
+        organization.save()
+        assert organization.icon.name == "icon/icon.png"
+
+        # /iconディレクトリにファイルが保存されている
+        saved_file = organization.icon.storage.open(organization.icon.name)
+        assert saved_file.read() == b"file_content"
+
+        # データベースに保存されているファイル名が一致している
+        file_from_db = Organization.objects.get(id=organization.id).icon
+        assert file_from_db.name == organization.icon.name
+
+        # ファイルを削除する
+        organization.icon.delete()
+
+        # upload_iconメソッドを使用したテスト
+        organization = Organization.objects.create(name="test")
+        organization.upload_icon(file)
+
+        # /iconディレクトリにファイルが保存されている
+        saved_file = organization.icon.storage.open(organization.icon.name)
+        assert saved_file.read() == b"file_content"
+
+        # データベースに保存されているファイル名が一致している
+        file_from_db = Organization.objects.get(id=organization.id).icon
+        assert file_from_db.name == organization.icon.name
+
+        # ファイルを削除する
+        organization.icon.delete()
 
 
 class Membership(models.Model):
@@ -238,90 +285,3 @@ class PublishmentStatus(models.Model):
         default=get_default_data,  # type: ignore
     )
     updated_at = models.DateTimeField(auto_now=True)
-
-
-class Post(models.Model):
-    title = models.CharField(max_length=100)
-    content = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
-
-
-class Comment(models.Model):
-    post = models.ForeignKey(Post, related_name="comments", on_delete=models.CASCADE)
-    text = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
-
-
-import pytest
-from rest_framework import serializers
-
-from app.models import Post
-from app.utils import logger
-
-
-class CommentSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Comment
-        fields = ["id", "text", "created_at"]
-
-
-class PostSerializer(serializers.ModelSerializer):
-    comments = CommentSerializer(many=True)
-
-    class Meta:
-        model = Post
-        fields = ["id", "title", "content", "comments"]
-
-    # []fixme validated_dataにidが渡されない
-    def update(self, instance: Post, validated_data) -> Post:
-        logger.debug("")
-        comments_data = validated_data.pop("comments", [])
-        for comment_data in comments_data:
-            logger.debug(f"### comment_data: {comment_data}")
-            comment_id = comment_data.get("id", None)
-            if comment_id:
-                # 既存のコメントを更新
-                comment = Comment.objects.get(id=comment_id, post=instance)
-                for attr, value in comment_data.items():
-                    setattr(comment, attr, value)
-                comment.save()
-            else:
-                # 新しいコメントを作成
-                Comment.objects.create(post=instance, **comment_data)
-
-        # Postインスタンスの更新
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        instance.save()
-
-        return instance
-
-
-class TestPostSerializer:
-    @pytest.mark.skip("updateメソッドがid: comment.idを受け取れないためスキップ")
-    @pytest.mark.django_db
-    def test_正常系_PostSerializerからコメントを更新できる(self) -> None:
-        post = Post.objects.create(title="title", content="content")
-        comment = Comment.objects.create(post=post, text="text")
-
-        serializer = PostSerializer(
-            instance=post,
-            data={
-                "title": "new title",
-                "content": "new content",
-                "comments": [
-                    {"id": comment.id, "text": "new text"},
-                ],
-            },
-            partial=True,
-        )
-
-        # trueのとき、is_valid()はvalidated_dataに格納する
-        assert serializer.is_valid()
-        serializer.save()
-
-        # post.refresh_from_db()
-        assert post.title == "new title"
-        assert post.content == "new content"
-        assert post.comments.count() == 1
-        assert post.comments.first().text == "new text"
