@@ -73,7 +73,7 @@ test_design_for_organization = {
                         TestOrganizationView.test400_組織メンバーの削除ができない
                     ]
                 },
-                "組織のメンバーが更新できる",
+                TestOrganizationView.test200_組織メンバーを更新できる,
             ]
         },
         "組織情報が更新できない",

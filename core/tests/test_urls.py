@@ -258,7 +258,6 @@ class TestOrganizationView:
         #         format="json",
         #     )
 
-        # []todo, エラーメッセージが正確かどうかもテストする
         response = self.client.delete(
             reverse(
                 "organization-update-membership",
@@ -270,6 +269,46 @@ class TestOrganizationView:
         assert response.status_code == 404
         assert "User not found" in response.data["error"]
         assert "User not found" in response.content.decode("utf-8")
+
+    @pytest.mark.django_db
+    def test200_組織メンバーを更新できる(self):
+        old_user = User.objects.create(name="old user")
+        old_user_role = "member"
+        response = self.client.post(
+            reverse(
+                "organization-update-membership",
+                kwargs={"pk": self.organization_instance.id},
+            ),
+            data={"user_id": old_user.id, "role": old_user_role},
+            format="json",
+        )
+        assert response.status_code == 201
+
+        response = self.client.get(
+            reverse(
+                "organization-memberships",
+                kwargs={"pk": self.organization_instance.id},
+            ),
+        )
+        assert response.status_code == 200
+        assert len(response.data) > 0
+        assert len(response.data) == 1
+        assert response.data[0]["role"] == old_user_role
+
+        new_user_role = "admin"
+        response = self.client.put(
+            reverse(
+                "organization-update-membership",
+                kwargs={"pk": self.organization_instance.id},
+            ),
+            data={"user_id": old_user.id, "role": new_user_role},
+            format="json",
+        )
+        assert response.status_code == 200
+        memberships = response.data["membership"]
+        for membership in memberships:
+            if membership["user"] == old_user.id:
+                assert membership["role"] == new_user_role
 
 
 class TestUserView:
