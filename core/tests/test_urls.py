@@ -248,17 +248,28 @@ class TestOrganizationView:
     @pytest.mark.django_db
     def test400_組織メンバーの削除ができない(self):
         """メンバーが存在しないため削除できない"""
-        with pytest.raises(Exception):
-            response = self.client.delete(
-                reverse(
-                    "organization-update-membership",
-                    kwargs={"pk": self.organization_instance.id},
-                ),
-                data={"user_id": 9999},
-                format="json",
-            )
+        # with pytest.raises(Exception):
+        #     response = self.client.delete(
+        #         reverse(
+        #             "organization-update-membership",
+        #             kwargs={"pk": self.organization_instance.id},
+        #         ),
+        #         data={"user_id": 9999},
+        #         format="json",
+        #     )
 
         # []todo, エラーメッセージが正確かどうかもテストする
+        response = self.client.delete(
+            reverse(
+                "organization-update-membership",
+                kwargs={"pk": self.organization_instance.id},
+            ),
+            data={"user_id": 9999},
+            format="json",
+        )
+        assert response.status_code == 404
+        assert "User not found" in response.data["error"]
+        assert "User not found" in response.content.decode("utf-8")
 
 
 class TestUserView:
