@@ -36,13 +36,6 @@ urlpatterns = [
     # 言語選択のエンドポイント
     path("languages/", views.language_choice, name="language_choice"),
     # 組織やプロジェクトに関する情報を扱うエンドポイント
-    path("organizations/", views.organization_list, name="organization_list"),
-    path(
-        "organizations/<int:org_id>/",
-        views.organization_detail,
-        name="organization_detail",
-    ),
-    # スペースやコンテンツに関するエンドポイント
     path("spaces/", views.space_list, name="space_list"),
     path("spaces/<int:space_id>/", views.space_detail, name="space_detail"),
     path("spaces/<int:space_id>/content/", views.content_list, name="content_list"),
@@ -53,7 +46,6 @@ urlpatterns = [
     ),
     # その他のエンドポイント
     path("app/announcements/", views.announcements, name="announcements"),
-    # ... その他多くのエンドポイントがここに続く可能性があります ...
     path("apikeys/", views.ApiViewSet.as_view({"get": "list", "post": "create"})),
     path(
         "apikeys/<int:pk>/",
@@ -74,10 +66,6 @@ urlpatterns = [
         ),
         name="organization-detail",
     ),
-    # path(
-    #     "organization/<int:pk>/memberships/",
-    #     views.OrganizationMembershipView.as_view({"get": "list"}),
-    # ),
     path(
         "organization/<int:pk>/update_owner/",
         views.OrganizationView.as_view({"put": "update_owner"}),

@@ -84,9 +84,11 @@ class Organization(models.Model):
 
     def get_role(self, *args, **kwargs):
         user_id = kwargs.pop("user_id", None)
-        # assert user_id is not None
+        assert user_id is not None
         membership = Membership.objects.filter(user_id=user_id, organization=self)
-        # assert membership.exists()
+        assert membership.exists()
+        assert membership.first().role is not None
+        assert membership.first().role in ["owner", "admin", "member"]
         return membership.first().role
 
 

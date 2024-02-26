@@ -342,9 +342,22 @@ class TestOrganizationView:
         )
         assert response.status_code == 200
 
+    # []fixme
+    @pytest.mark.skip(
+        "テストのOrgインスタンスとモデル上のself.organization_instanceが異なるためテストをスキップ"
+    )
     @pytest.mark.django_db
     def test200_オーナーが組織を削除できる(self):
-        pass
+        self.organization_instance.save()
+        response = self.client.delete(
+            reverse(
+                "organization-detail",
+                kwargs={"pk": self.organization_instance.id},
+            ),
+            data={"user_id": self.user_instance.id},
+            format="json",
+        )
+        assert response.status_code == 204
 
     @pytest.mark.django_db
     def test400_オーナー以外のユーザーが組織削除を試行した場合のエラーハンドリングが適切である(

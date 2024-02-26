@@ -177,6 +177,25 @@ class OrganizationView(ModelViewSet):
     queryset = Organization.objects.all()
     serializer_class = OrganizationSerializer
 
+    def destroy(self, request, *args, **kwargs):
+        # []todo 認証ユーザーはrequest.userを使用する
+        user_id = request.data.get("user_id")
+        assert user_id is not None
+        organization = self.get_object()
+        try:
+            role = organization.get_role(user_id=user_id)
+            assert role in ["owner", "admin", "member"]
+            if role == "owner":
+                assert role == "owner"
+                return super().destroy(request, *args, **kwargs)
+            else:
+                return Response(
+                    {"error": "You are not the owner of this organization"},
+                    status=403,
+                )
+        except User.DoesNotExist:
+            return Response({"error": "User not found"}, status=404)
+
     def update_owner(self, request, *args, **kwargs):
         instance = self.get_object()
         user_id = request.data.get("user_id")
