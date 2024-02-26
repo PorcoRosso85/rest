@@ -209,13 +209,16 @@ class OrganizationView(ModelViewSet):
         return Response(serializer.data, status=201)
 
     def update_membership(self, request, *args, **kwargs):
-        organization = self.get_object()
-        user_id = request.data.get("user_id")
-        user = User.objects.get(id=user_id)
-        role = request.data.get("role")
-        organization.update_membership(user, role)
-        serializer = self.get_serializer(organization)
-        return Response(serializer.data)
+        try:
+            organization = self.get_object()
+            user_id = request.data.get("user_id")
+            user = User.objects.get(id=user_id)
+            role = request.data.get("role")
+            organization.update_membership(user, role)
+            serializer = self.get_serializer(organization)
+            return Response(serializer.data)
+        except User.DoesNotExist:
+            return Response({"error": "User not found"}, status=404)
 
     def remove_membership(self, request, *args, **kwargs):
         try:

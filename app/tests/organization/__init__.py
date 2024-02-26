@@ -68,6 +68,11 @@ test_design_for_organization = {
                 TestOrganizationView.test200_組織オーナーを更新できる,
                 TestOrganizationView.test200_組織メンバーの追加ができる,
                 TestOrganizationView.test200_組織メンバーの削除ができる,
+                {
+                    "組織メンバーが存在しない": [
+                        TestOrganizationView.test400_組織メンバーの削除ができない
+                    ]
+                },
                 "組織のメンバーが更新できる",
             ]
         },
