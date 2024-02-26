@@ -28,7 +28,7 @@ class TestOrganizationView:
 
     @pytest.mark.django_db
     def test200_作成したユーザーとオーナーが一致する(self):
-        self.organization_instance.save(user=self.user_instance)
+        self.organization_instance.create(user=self.user_instance)
         membership = self.organization_instance.membership.first()
         logger.debug(f"### membership: {membership}")
         assert membership is not None
@@ -125,7 +125,7 @@ class TestOrganizationView:
 
     @pytest.mark.django_db
     def test200_組織オーナーを更新できる(self):
-        self.organization_instance.save(user=self.user_instance)
+        self.organization_instance.create(user=self.user_instance)
         existing_owner = self.organization_instance.membership.first()
         assert existing_owner is not None
         assert existing_owner.role == "owner"
@@ -341,6 +341,16 @@ class TestOrganizationView:
             format="multipart",
         )
         assert response.status_code == 200
+
+    @pytest.mark.django_db
+    def test200_オーナーが組織を削除できる(self):
+        pass
+
+    @pytest.mark.django_db
+    def test400_オーナー以外のユーザーが組織削除を試行した場合のエラーハンドリングが適切である(
+        self,
+    ):
+        pass
 
 
 class TestUserView:

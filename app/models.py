@@ -37,7 +37,7 @@ class Organization(models.Model):
     plan_created_at = models.DateTimeField(default=timezone.now)
     plan_updated_at = models.DateTimeField(default=timezone.now)
 
-    def save(self, *args, **kwargs):
+    def create(self, *args, **kwargs):
         user = kwargs.pop("user", None)
         super().save(*args, **kwargs)
         if user is not None:
@@ -82,8 +82,22 @@ class Organization(models.Model):
         self.icon.delete()
         # []check ストレージからの削除はおこなうか
 
+    def get_role(self, *args, **kwargs):
+        user = kwargs.pop("user", None)
+        return self.membership.filter(user=user).first().role
+
 
 class TestOrganizationModel:
+    @pytest.mark.django_db
+    def test200_組織メンバーのロールを取得する(self):
+        user = User.objects.create(name="test user")
+        organization = Organization.objects.create(name="test")
+        organization.create(user=user)
+        role = organization.get_role(user=user)
+        assert role == "owner"
+
+        # ユーザーのロールを変更する
+
     @pytest.mark.django_db
     def test200_組織メンバーを追加できる(self):
         user = User.objects.create(name="test user")
@@ -102,7 +116,7 @@ class TestOrganizationModel:
     def test200_オーナー変更ができる(self):
         user = User.objects.create(name="test user")
         organization = Organization.objects.create(name="test")
-        organization.save(user=user)
+        organization.create(user=user)
         memberships = organization.membership.filter(user=user)
         assert memberships.exists()
         membership = memberships.first()
