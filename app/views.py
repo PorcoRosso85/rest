@@ -176,6 +176,22 @@ class OrganizationView(ModelViewSet):
     queryset = Organization.objects.all()
     serializer_class = OrganizationSerializer
 
+    def update_owner(self, request, *args, **kwargs):
+        instance = self.get_object()
+        user_id = request.data.get("user_id")
+
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response(
+                {"error": "User not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        instance.update_owner(user)
+
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+
 
 class OrganizationSpaceView(ModelViewSet):
     serializer_class = OrganizationSpaceSerializer

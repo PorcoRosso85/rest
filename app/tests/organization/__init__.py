@@ -64,7 +64,7 @@ test_design_for_organization = {
     "組織情報の更新": [
         {
             "組織情報が更新できる": [
-                "組織名が更新できる",
+                TestOrganizationView.test200_組織名を更新できる,
                 "組織のオーナーが更新できる",
                 {
                     "組織のメンバーが更新できる": [

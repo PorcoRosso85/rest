@@ -36,7 +36,6 @@ class Organization(models.Model):
     plan_created_at = models.DateTimeField(default=timezone.now)
     plan_updated_at = models.DateTimeField(default=timezone.now)
 
-    # 最低一人のメンバーをMembershipで関連しているかどうかチェック
     def save(self, *args, **kwargs):
         user = kwargs.pop("user", None)
         super().save(*args, **kwargs)
@@ -45,12 +44,47 @@ class Organization(models.Model):
             if not membership.exists():
                 Membership.objects.create(user=user, organization=self, role="owner")
 
+    def update_owner(self, user):
+        membership = Membership.objects.filter(organization=self, role="owner")
+        # assert membership.exists()
+        if membership.exists():
+            for member in membership:
+                member.role = "member"
+                member.save()
+        Membership.objects.create(user=user, organization=self, role="owner")
+
 
 class TestOrganizationModel:
     @pytest.mark.django_db
     def test200_作成可能(self):
         organization = Organization.objects.create(name="test")
         assert organization.id is not None
+
+    @pytest.mark.django_db
+    def test200_オーナー変更ができる(self):
+        user = User.objects.create(name="test user")
+        organization = Organization.objects.create(name="test")
+        organization.save(user=user)
+        memberships = organization.membership.filter(user=user)
+        assert memberships.exists()
+        membership = memberships.first()
+        assert membership is not None
+        assert membership.user == user
+        assert membership.role == "owner"
+
+        new_user = User.objects.create(name="new user")
+        organization.update_owner(new_user)
+        new_membership = organization.membership.filter(user=new_user).first()
+        assert new_membership is not None
+        assert new_membership.role == "owner"
+
+        old_owner = organization.membership.filter(user=user)
+        assert old_owner.exists()
+        assert old_owner.first().role == "member"
+        assert old_owner.count() == memberships.count()
+
+        # ownerは一人しか存在しない
+        # assert organization.membership.role.filter(user=user).count() == 0
 
 
 class Membership(models.Model):
