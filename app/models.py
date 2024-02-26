@@ -83,20 +83,39 @@ class Organization(models.Model):
         # []check ストレージからの削除はおこなうか
 
     def get_role(self, *args, **kwargs):
-        user = kwargs.pop("user", None)
-        return self.membership.filter(user=user).first().role
+        user_id = kwargs.pop("user_id", None)
+        # assert user_id is not None
+        membership = Membership.objects.filter(user_id=user_id, organization=self)
+        # assert membership.exists()
+        return membership.first().role
 
 
 class TestOrganizationModel:
     @pytest.mark.django_db
     def test200_組織メンバーのロールを取得する(self):
         user = User.objects.create(name="test user")
+        assert user.id is not None
         organization = Organization.objects.create(name="test")
         organization.create(user=user)
-        role = organization.get_role(user=user)
+        assert organization.id is not None
+        assert organization.membership.exists()
+        role = organization.get_role(user_id=user.id)
         assert role == "owner"
 
-        # ユーザーのロールを変更する
+    @pytest.mark.django_db
+    def test200_組織メンバーのロールを更新する(self):
+        user = User.objects.create(name="test user")
+        assert user.id is not None
+        organization = Organization.objects.create(name="test")
+        organization.create(user=user)
+        assert organization.id is not None
+        assert organization.membership.exists()
+        role = organization.get_role(user_id=user.id)
+        assert role == "owner"
+
+        organization.update_membership(user, "admin")
+        role = organization.get_role(user_id=user.id)
+        assert role == "admin"
 
     @pytest.mark.django_db
     def test200_組織メンバーを追加できる(self):
