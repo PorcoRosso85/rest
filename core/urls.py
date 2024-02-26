@@ -84,6 +84,11 @@ urlpatterns = [
         name="organization-update-owner",
     ),
     path(
+        "organization/<int:pk>/memberships/",
+        views.OrganizationView.as_view({"get": "list_memberships"}),
+        name="organization-memberships",
+    ),
+    path(
         "organization/<int:pk>/update_membership/",
         views.OrganizationView.as_view(
             {

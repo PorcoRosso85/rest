@@ -55,6 +55,7 @@ test_design_for_organization = {
     "組織情報の取得": [
         TestOrganizationView.test200_組織情報を取得できる,
         TestOrganizationView.test400_組織情報が取得できていない,
+        TestOrganizationView.test200_組織メンバーの一覧を取得できる,
     ],
     "組織に関連するスペースの取得": [
         TestOrganizationView.test200_組織に属するスペースの一覧が取得できる,
@@ -65,8 +66,8 @@ test_design_for_organization = {
             "組織情報が更新できる": [
                 TestOrganizationView.test200_組織名を更新できる,
                 TestOrganizationView.test200_組織オーナーを更新できる,
-                "組織のメンバーが追加できる",
-                "組織のメンバーが削除できる",
+                TestOrganizationView.test200_組織メンバーの追加ができる,
+                TestOrganizationView.test200_組織メンバーの削除ができる,
                 "組織のメンバーが更新できる",
             ]
         },

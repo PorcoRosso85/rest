@@ -8,6 +8,7 @@ from app.models import Access, ApiKeys, Organization, Space, User
 from app.serializer import (
     AccessSerializer,
     ApiKeysSerializer,
+    MembershipSerializer,
     OrganizationSerializer,
     OrganizationSpaceSerializer,
     SpaceSerializer,
@@ -190,6 +191,12 @@ class OrganizationView(ModelViewSet):
         instance.update_owner(user)
 
         serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+
+    def list_memberships(self, request, *args, **kwargs):
+        instance = self.get_object()
+        memberships = instance.membership.all()
+        serializer = MembershipSerializer(memberships, many=True)
         return Response(serializer.data)
 
     def add_membership(self, request, *args, **kwargs):

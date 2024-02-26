@@ -56,6 +56,13 @@ class Organization(models.Model):
     def add_membership(self, user, role):
         Membership.objects.create(user=user, organization=self, role=role)
 
+    def remove_membership(self, user):
+        membership = Membership.objects.filter(user=user, organization=self)
+        if membership.exists():
+            membership.delete()
+        else:
+            raise ValueError("membership not found")
+
 
 class TestOrganizationModel:
     @pytest.mark.django_db

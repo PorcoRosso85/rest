@@ -189,6 +189,77 @@ class TestOrganizationView:
             if membership["user"] == new_user.id:
                 assert membership["role"] == role
 
+    @pytest.mark.django_db
+    def test200_組織メンバーの一覧を取得できる(self):
+        new_user = User.objects.create(name="new user")
+        role = "member"
+        response = self.client.post(
+            reverse(
+                "organization-update-membership",
+                kwargs={"pk": self.organization_instance.id},
+            ),
+            data={"user_id": new_user.id, "role": role},
+            format="json",
+        )
+        assert response.status_code == 201
+
+        response = self.client.get(
+            reverse(
+                "organization-memberships",
+                kwargs={"pk": self.organization_instance.id},
+            ),
+        )
+        assert response.status_code == 200
+        assert len(response.data) > 0
+
+    @pytest.mark.django_db
+    def test200_組織メンバーの削除ができる(self):
+        new_user = User.objects.create(name="new user")
+        role = "member"
+        response = self.client.post(
+            reverse(
+                "organization-update-membership",
+                kwargs={"pk": self.organization_instance.id},
+            ),
+            data={"user_id": new_user.id, "role": role},
+            format="json",
+        )
+        assert response.status_code == 201
+
+        response = self.client.get(
+            reverse(
+                "organization-memberships",
+                kwargs={"pk": self.organization_instance.id},
+            ),
+        )
+        assert response.status_code == 200
+        assert len(response.data) > 0
+
+        response = self.client.delete(
+            reverse(
+                "organization-update-membership",
+                kwargs={"pk": self.organization_instance.id},
+            ),
+            data={"user_id": new_user.id},
+            format="json",
+        )
+        assert response.status_code == 200
+
+    @pytest.mark.django_db
+    def test400_組織メンバーの削除ができない(self):
+        """メンバーが存在しないため削除できない"""
+        with pytest.raises(Exception):
+            response = self.client.delete(
+                reverse(
+                    "organization-update-membership",
+                    kwargs={"pk": self.organization_instance.id},
+                ),
+                data={"user_id": 9999},
+                format="json",
+            )
+
+        # []todo, エラーメッセージが正確かどうかもテストする
+
 
 class TestUserView:
     def setup_method(self):
