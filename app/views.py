@@ -192,6 +192,32 @@ class OrganizationView(ModelViewSet):
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
 
+    def add_membership(self, request, *args, **kwargs):
+        organization = self.get_object()
+        user_id = request.data.get("user_id")
+        role = request.data.get("role")
+        user = User.objects.get(id=user_id)
+        organization.add_membership(user, role)
+        serializer = self.get_serializer(organization)
+        return Response(serializer.data, status=201)
+
+    def update_membership(self, request, *args, **kwargs):
+        organization = self.get_object()
+        user_id = request.data.get("user_id")
+        user = User.objects.get(id=user_id)
+        role = request.data.get("role")
+        organization.update_membership(user, role)
+        serializer = self.get_serializer(organization)
+        return Response(serializer.data)
+
+    def remove_membership(self, request, *args, **kwargs):
+        organization = self.get_object()
+        user_id = request.data.get("user_id")
+        user = User.objects.get(id=user_id)
+        organization.remove_membership(user)
+        serializer = self.get_serializer(organization)
+        return Response(serializer.data)
+
 
 class OrganizationSpaceView(ModelViewSet):
     serializer_class = OrganizationSpaceSerializer

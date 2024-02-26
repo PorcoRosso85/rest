@@ -53,8 +53,20 @@ class Organization(models.Model):
                 member.save()
         Membership.objects.create(user=user, organization=self, role="owner")
 
+    def add_membership(self, user, role):
+        Membership.objects.create(user=user, organization=self, role=role)
+
 
 class TestOrganizationModel:
+    @pytest.mark.django_db
+    def test200_組織メンバーを追加できる(self):
+        user = User.objects.create(name="test user")
+        organization = Organization.objects.create(name="test")
+        organization.add_membership(user, "member")
+        membership = organization.membership.filter(user=user)
+        assert membership.exists()
+        assert membership.first().role == "member"
+
     @pytest.mark.django_db
     def test200_作成可能(self):
         organization = Organization.objects.create(name="test")

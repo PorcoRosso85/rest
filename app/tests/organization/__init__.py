@@ -1,7 +1,6 @@
-from urls import TestOrganizationView, TestUserView
-
 from app.test_models import TestMembershipModel, TestOrganizationModel
 from app.test_serializer import TestOrganizationSerializer
+from core.tests.test_urls import TestOrganizationView, TestUserView
 
 test_design_for_organization = {
     "組織の作成": [
@@ -65,13 +64,10 @@ test_design_for_organization = {
         {
             "組織情報が更新できる": [
                 TestOrganizationView.test200_組織名を更新できる,
-                "組織のオーナーが更新できる",
-                {
-                    "組織のメンバーが更新できる": [
-                        "組織のメンバーが追加できる",
-                        "組織のメンバーが削除できる",
-                    ]
-                },
+                TestOrganizationView.test200_組織オーナーを更新できる,
+                "組織のメンバーが追加できる",
+                "組織のメンバーが削除できる",
+                "組織のメンバーが更新できる",
             ]
         },
         "組織情報が更新できない",
