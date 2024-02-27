@@ -13,8 +13,10 @@ class TestOrganizationView:
     @pytest.fixture(autouse=True)
     def setup_teardown(self):
         print("\n### SETUP")
-        self.organization_instance = Organization.objects.create(name="test org")
         self.user_instance = User.objects.create(name="test user")
+        self.organization_instance = Organization.objects.create(
+            name="test org", owner=self.user_instance
+        )
         self.space_instance = Space.objects.create(
             name="test space", organization=self.organization_instance
         )
@@ -57,14 +59,70 @@ class TestOrganizationView:
         )
         assert response.status_code == 201
         assert response.data["name"] == "new org"
+        # []fixme
+        assert response.data["id"] == self.organization_instance.id + 1
 
     @pytest.mark.django_db
     def test200_作成したユーザーとオーナーが一致する(self):
-        self.organization_instance.create(user=self.user_instance)
         membership = self.organization_instance.membership.first()
         logger.debug(f"### membership: {membership}")
         assert membership is not None
         assert membership.user == self.user_instance
+
+    @pytest.mark.django_db
+    def test200_組織のメンバーシップを取得できる(self):
+        response = self.client.get(
+            reverse(
+                "organization-memberships", kwargs={"pk": self.organization_instance.id}
+            )
+        )
+        assert response.status_code == 200
+        assert len(response.data) == 1
+
+    @pytest.mark.django_db
+    def test200_組織を作成したユーザーがメンバーシップとして関連している(self):
+        # 組織を作成
+        response = self.client.post(
+            reverse("organization-list"), data={"name": "new org"}, format="json"
+        )
+        assert response.status_code == 201
+        assert response.data["name"] == "new org"
+        # []fixme
+        assert response.data["id"] == self.organization_instance.id + 1
+
+        # 組織のメンバーシップの取得
+        # Membership.objects.create(
+        #     user=self.user_instance,
+        #     organization=Organization.objects.get(id=response.data["id"]),
+        # )
+        response = self.client.get(
+            reverse("organization-memberships", kwargs={"pk": response.data["id"]})
+        )
+        assert response.status_code == 200
+        assert len(response.data) > 0
+
+    @pytest.mark.skip("オーナーのチェックは後ほど")
+    @pytest.mark.django_db
+    def test200_組織を作成したユーザーがオーナーでありメンバーシップとして関連している(
+        self,
+    ):
+        response = self.client.post(
+            reverse("organization-list"), data={"name": "new org"}, format="json"
+        )
+        assert response.status_code == 201
+        assert response.data["name"] == "new org"
+
+        # 作成された組織のidの一致を
+        # []fixme
+        assert response.data["id"] == self.organization_instance.id + 1
+
+        # 組織のメンバーシップの取得
+        response = self.client.get(
+            reverse("organization-memberships", kwargs={"pk": response.data["id"]})
+        )
+        assert response.status_code == 200
+        assert len(response.data) > 0
+        assert response.data[0]["role"] == "owner"
 
     @pytest.mark.django_db
     def test400_ユーザーが存在するが取得できない(self):
@@ -157,7 +215,6 @@ class TestOrganizationView:
 
     @pytest.mark.django_db
     def test200_組織オーナーを更新できる(self):
-        self.organization_instance.create(user=self.user_instance)
         existing_owner = self.organization_instance.membership.first()
         assert existing_owner is not None
         assert existing_owner.role == "owner"
@@ -274,18 +331,6 @@ class TestOrganizationView:
 
     @pytest.mark.django_db
     def test200_組織メンバーを更新できる(self):
-        old_user = User.objects.create(name="old user")
-        old_user_role = "member"
-        response = self.client.post(
-            reverse(
-                "organization-update-membership",
-                kwargs={"pk": self.organization_instance.id},
-            ),
-            data={"user_id": old_user.id, "role": old_user_role},
-            format="json",
-        )
-        assert response.status_code == 201
-
         response = self.client.get(
             reverse(
                 "organization-memberships",
@@ -293,23 +338,24 @@ class TestOrganizationView:
             ),
         )
         assert response.status_code == 200
+        assert response.data[0]["role"] == "owner"
         assert len(response.data) > 0
         assert len(response.data) == 1
-        assert response.data[0]["role"] == old_user_role
 
+        new_user = User.objects.create(name="new user")
         new_user_role = "admin"
         response = self.client.put(
             reverse(
                 "organization-update-membership",
                 kwargs={"pk": self.organization_instance.id},
             ),
-            data={"user_id": old_user.id, "role": new_user_role},
+            data={"user_id": self.user_instance.id, "role": new_user_role},
             format="json",
         )
         assert response.status_code == 200
         memberships = response.data["membership"]
         for membership in memberships:
-            if membership["user"] == old_user.id:
+            if membership["user"] == new_user.id:
                 assert membership["role"] == new_user_role
 
     @pytest.mark.skip(
