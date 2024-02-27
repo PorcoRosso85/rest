@@ -85,6 +85,7 @@ class Organization(models.Model):
     def get_role(self, *args, **kwargs):
         user_id = kwargs.pop("user_id", None)
         assert user_id is not None
+        # assert self.id == 1
         membership = Membership.objects.filter(user_id=user_id, organization=self)
         assert membership.exists()
         assert membership.first().role is not None
@@ -93,30 +94,42 @@ class Organization(models.Model):
 
 
 class TestOrganizationModel:
+    def setup_method(self, method):
+        print("\n ### setup before each test method")
+        self.organization = None
+        self.user = None
+        self.organization = Organization.objects.create(name="test organization")
+        self.user = User.objects.create(name="test user")
+
+    def teardown_method(self, method):
+        print("\n ### teardown after each test method")
+        if self.organization:
+            # self.organization.delete()
+            Organization.objects.all().delete()
+        if self.user:
+            # self.user.delete()
+            User.objects.all().delete()
+        assert Organization.objects.count() == 0
+        assert User.objects.count() == 0
+
     @pytest.mark.django_db
     def test200_組織メンバーのロールを取得する(self):
-        user = User.objects.create(name="test user")
-        assert user.id is not None
-        organization = Organization.objects.create(name="test")
-        organization.create(user=user)
-        assert organization.id is not None
-        assert organization.membership.exists()
-        role = organization.get_role(user_id=user.id)
+        self.organization.create(user=self.user)
+        assert self.organization.id is not None
+        assert self.organization.membership.exists()
+        role = self.organization.get_role(user_id=self.user.id)
         assert role == "owner"
 
     @pytest.mark.django_db
     def test200_組織メンバーのロールを更新する(self):
-        user = User.objects.create(name="test user")
-        assert user.id is not None
-        organization = Organization.objects.create(name="test")
-        organization.create(user=user)
-        assert organization.id is not None
-        assert organization.membership.exists()
-        role = organization.get_role(user_id=user.id)
+        self.organization.create(user=self.user)
+        assert self.organization.id is not None
+        assert self.organization.membership.exists()
+        role = self.organization.get_role(user_id=self.user.id)
         assert role == "owner"
 
-        organization.update_membership(user, "admin")
-        role = organization.get_role(user_id=user.id)
+        self.organization.update_membership(self.user, "admin")
+        role = self.organization.get_role(user_id=self.user.id)
         assert role == "admin"
 
     @pytest.mark.django_db
