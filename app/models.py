@@ -94,14 +94,14 @@ class Organization(models.Model):
 
 
 class TestOrganizationModel:
-    def setup_method(self, method):
+    @pytest.fixture
+    def org_and_user(self):
         print("\n### SETUP")
-        self.organization = None
-        self.user = None
         self.organization = Organization.objects.create(name="test organization")
         self.user = User.objects.create(name="test user")
 
-    def teardown_method(self, method):
+        yield self.organization, self.user
+
         print("\n### TEARDOWN")
         if self.organization:
             # self.organization.delete()
@@ -113,7 +113,7 @@ class TestOrganizationModel:
         assert User.objects.count() == 0
 
     @pytest.mark.django_db
-    def test200_組織メンバーのロールを取得する(self):
+    def test200_組織メンバーのロールを取得する(self, org_and_user):
         self.organization.create(user=self.user)
         assert self.organization.id is not None
         assert self.organization.membership.exists()
@@ -121,7 +121,7 @@ class TestOrganizationModel:
         assert role == "owner"
 
     @pytest.mark.django_db
-    def test200_組織メンバーのロールを更新する(self):
+    def test200_組織メンバーのロールを更新する(self, org_and_user):
         self.organization.create(user=self.user)
         assert self.organization.id is not None
         assert self.organization.membership.exists()
@@ -133,7 +133,7 @@ class TestOrganizationModel:
         assert role == "admin"
 
     @pytest.mark.django_db
-    def test200_組織メンバーを追加できる(self):
+    def test200_組織メンバーを追加できる(self, org_and_user):
         user = User.objects.create(name="test user")
         organization = Organization.objects.create(name="test")
         organization.add_membership(user, "member")
@@ -142,12 +142,12 @@ class TestOrganizationModel:
         assert membership.first().role == "member"
 
     @pytest.mark.django_db
-    def test200_作成可能(self):
+    def test200_作成可能(self, org_and_user):
         organization = Organization.objects.create(name="test")
         assert organization.id is not None
 
     @pytest.mark.django_db
-    def test200_オーナー変更ができる(self):
+    def test200_オーナー変更ができる(self, org_and_user):
         user = User.objects.create(name="test user")
         organization = Organization.objects.create(name="test")
         organization.create(user=user)
@@ -174,7 +174,7 @@ class TestOrganizationModel:
         # assert organization.membership.role.filter(user=user).count() == 0
 
     @pytest.mark.django_db
-    def test200_組織アイコンをサーバーに保存および取得ができる(self):
+    def test200_組織アイコンをサーバーに保存および取得ができる(self, org_and_user):
         file = SimpleUploadedFile("icon.png", b"file_content", content_type="image/png")
         organization = Organization.objects.create(name="test", icon=file)
 
