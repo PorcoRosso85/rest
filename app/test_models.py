@@ -270,11 +270,18 @@ class TestOrganizationModel:
         pass
 
     @pytest.mark.django_db
-    def test200_最低1人のオーナーが存在する(self):
-        pass
-
-    @pytest.mark.django_db
     def test200_組織を削除できる(self):
         assert self.organization.id is not None
         self.organization.delete()
         assert Organization.objects.filter(id=self.organization.id).count() == 0
+
+    @pytest.mark.django_db
+    def test200_組織オーナーをメンバーシップから取得できる(self):
+        membership = Membership.objects.create(
+            user=self.user1, organization=self.organization
+        )
+        assert self.organization.membership.first().user == self.user1
+        assert (
+            Organization.objects.get(id=self.organization.id).membership.first().user
+            == self.user1
+        )
