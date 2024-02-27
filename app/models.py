@@ -89,7 +89,7 @@ class Organization(models.Model):
         assert membership.exists()
         assert membership.first().role is not None
         assert membership.first().role in ["owner", "admin", "member"]
-        return membership.first().role
+        return membership.first().role, self.id
 
 
 class TestOrganizationModel:
@@ -123,8 +123,9 @@ class TestOrganizationModel:
             user=self.user, organization=self.organization
         )
         assert self.organization.membership.exists()
-        role = self.organization.get_role(user_id=self.user.id)
+        role, org_id = self.organization.get_role(user_id=self.user.id)
         assert role == "member"
+        assert org_id == self.organization.id
 
     @pytest.mark.django_db
     def test200_組織メンバーのロールを更新する(self, org_and_user):
@@ -132,11 +133,12 @@ class TestOrganizationModel:
             user=self.user, organization=self.organization, role="owner"
         )
         assert self.organization.membership.exists()
-        role = self.organization.get_role(user_id=self.user.id)
+        role, org_id = self.organization.get_role(user_id=self.user.id)
+        assert org_id == self.organization.id
         assert role == "owner"
 
         self.organization.update_membership(self.user, "admin")
-        role = self.organization.get_role(user_id=self.user.id)
+        role, org_id = self.organization.get_role(user_id=self.user.id)
         assert role == "admin"
 
     @pytest.mark.django_db
