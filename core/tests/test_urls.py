@@ -10,10 +10,9 @@ from app.utils import logger
 
 
 class TestOrganizationView:
+    @pytest.mark.skip
     def setup_method(self, method):
         print("\n### SETUP")
-        self.organization_instance = None
-        self.user_instance = None
         self.organization_instance = Organization.objects.create(name="test org")
         self.user_instance = User.objects.create(name="test user")
         self.space_instance = Space.objects.create(
@@ -22,6 +21,7 @@ class TestOrganizationView:
 
         self.client = APIClient()
 
+    @pytest.mark.skip
     def teardown_method(self, method):
         print("\n### TEARDOWN")
         if self.organization_instance:
@@ -352,9 +352,28 @@ class TestOrganizationView:
 
 
 class TestUserView:
-    def setup_method(self):
+    def setup_method(self, method):
+        print("\n### SETUP")
+        self.organization_instance = None
+        self.user_instance = None
+        self.organization_instance = Organization.objects.create(name="test org")
+        self.user_instance = User.objects.create(name="test user")
+        self.space_instance = Space.objects.create(
+            name="test space", organization=self.organization_instance
+        )
+
         self.client = APIClient()
-        self.user_instance = User.objects.create(name="test username")
+
+    def teardown_method(self, method):
+        print("\n### TEARDOWN")
+        if self.organization_instance:
+            # self.organization.delete()
+            Organization.objects.all().delete()
+        if self.user_instance:
+            # self.user.delete()
+            User.objects.all().delete()
+        assert Organization.objects.count() == 0
+        assert User.objects.count() == 0
 
     @pytest.mark.django_db
     def test200_ユーザー一覧を取得できる(self):
