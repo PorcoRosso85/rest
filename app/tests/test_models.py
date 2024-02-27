@@ -427,3 +427,49 @@ class TestOrganizationModel:
         assert memberships.count() == 2
         for membership in memberships:
             assert membership.role == "owner"
+
+    @pytest.fixture
+    def fixture_org_user_space(self):
+        print("\n### fixture_org_user_space")
+        print("\n### SETUP")
+        self.user = User.objects.create(name="test user")
+        self.organization = Organization.objects.create(
+            name="test organization", owner=self.user
+        )
+        self.space = Space.objects.create(organization=self.organization)
+
+        yield self.organization, self.user, self.space
+
+        print("\n### TEST ENDS")
+        print("\n### TEARDOWN")
+        if Organization.objects.exists():
+            Organization.objects.all().delete()
+        assert Organization.objects.count() == 0
+        print(" no organization")
+
+        if User.objects.exists():
+            User.objects.all().delete()
+        assert User.objects.count() == 0
+        print(" no user")
+
+        if Space.objects.exists():
+            Space.objects.all().delete()
+        assert Space.objects.count() == 0
+        print(" no space")
+
+    @pytest.mark.django_db
+    def test200_組織が削除され関連するスペースも削除される(
+        self, fixture_org_user_space
+    ):
+        """組織が削除されると関連するスペースも削除される
+        削除前関連するスペースの存在を確認
+        削除後関連するスペースの削除を確認
+        """
+
+        org_id = self.organization.id
+        assert Space.objects.filter(organization_id=org_id).exists()
+        self.organization.delete()
+
+        assert not Space.objects.filter(organization_id=org_id).exists()
+        # with pytest.raises(Space.DoesNotExist):
+        #     Space.objects.get(organization=self.organization)

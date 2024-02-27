@@ -1,6 +1,5 @@
-from app.models import TestOrganizationModel as TOM
-from app.test_models import TestMembershipModel, TestOrganizationModel
-from app.test_serializer import TestOrganizationSerializer
+from app.tests.test_models import TestMembershipModel, TestOrganizationModel
+from app.tests.test_serializer import TestOrganizationSerializer
 from core.tests.test_urls import TestOrganizationView, TestUserView
 
 test_design_for_organization = {
@@ -73,20 +72,20 @@ test_design_for_organization = {
             ]
         },
         TestOrganizationView.test200_組織メンバーを更新できる,
-        TOM.test200_組織アイコンをサーバーに保存および取得ができる,
+        TestOrganizationModel.test200_組織アイコンをサーバーに保存および取得ができる,
         TestOrganizationView.test200_組織アイコンをアップロードできる,
         "組織アイコンを取得できる",
         "組織アイコンを削除できる",
     ],
     "組織の削除": [
+        "オーナー以外のユーザーが組織削除を試みた場合のエラーハンドリング",
+        TestOrganizationView.test403_組織オーナー以外のメンバーシップは組織を削除できない,
         "認証されたオーナーにより組織が削除される",
         TestOrganizationModel.test200_組織を削除できる,
         TestOrganizationModel.test200_組織オーナーをメンバーシップから取得できる,
-        TestOrganizationView.test403_組織オーナー以外のメンバーシップは組織を削除できない,
         TestOrganizationView.test200_組織オーナーは組織を削除できる,
         "組織削除後、関連するスペースやデータが削除される",
-        "未認証ユーザーが組織削除を試みた場合のエラーハンドリング",
-        "オーナー以外のユーザーが組織削除を試みた場合のエラーハンドリング",
+        TestOrganizationModel.test200_組織が削除され関連するスペースも削除される,
     ],
     "権限管理": [
         "オーナー、管理者、メンバーの各ロールに応じたアクセス権限が適用されている",
