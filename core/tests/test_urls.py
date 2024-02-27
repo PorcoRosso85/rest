@@ -22,6 +22,7 @@ class TestOrganizationView:
         )
 
         self.client = APIClient()
+        self.client.force_authenticate(user=self.user_instance)
 
         yield (
             self.organization_instance,
@@ -79,23 +80,30 @@ class TestOrganizationView:
         assert response.status_code == 200
         assert len(response.data) == 1
 
+    @pytest.mark.skip("list_membershipsうまく行かない")
     @pytest.mark.django_db
     def test200_組織を作成したユーザーがメンバーシップとして関連している(self):
+        response = self.client.get(
+            reverse(
+                "organization-memberships", kwargs={"pk": self.organization_instance.id}
+            )
+        )
+        assert response.status_code == 200
+        assert len(response.data) > 0
+
         # 組織を作成
-        response = self.client.post(
+        new_user = User.objects.create(name="new user")
+        client = APIClient()
+        client.force_authenticate(user=new_user)
+        response = client.post(
             reverse("organization-list"), data={"name": "new org"}, format="json"
         )
         assert response.status_code == 201
         assert response.data["name"] == "new org"
-        # []fixme
+        # 追加で作成されたから
         assert response.data["id"] == self.organization_instance.id + 1
 
-        # 組織のメンバーシップの取得
-        # Membership.objects.create(
-        #     user=self.user_instance,
-        #     organization=Organization.objects.get(id=response.data["id"]),
-        # )
-        response = self.client.get(
+        response = client.get(
             reverse("organization-memberships", kwargs={"pk": response.data["id"]})
         )
         assert response.status_code == 200

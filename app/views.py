@@ -177,6 +177,11 @@ class OrganizationView(ModelViewSet):
     queryset = Organization.objects.all()
     serializer_class = OrganizationSerializer
 
+    def create(self, request, *args, **kwargs):
+        print(f"### request.user.id: {request.user.id}")
+        print(f"### request.user.name: {request.user.name}")
+        return super().create(request, *args, **kwargs)
+
     def destroy(self, request, *args, **kwargs):
         # []todo 認証ユーザーはrequest.userを使用する
         user_id = request.data.get("user_id")
@@ -203,9 +208,7 @@ class OrganizationView(ModelViewSet):
         try:
             user = User.objects.get(id=user_id)
         except User.DoesNotExist:
-            return Response(
-                {"error": "User not found"}, status=status.HTTP_404_NOT_FOUND
-            )
+            return Response({"error": "User not found"}, status=404)
 
         instance.update_owner(user)
 
@@ -213,10 +216,17 @@ class OrganizationView(ModelViewSet):
         return Response(serializer.data)
 
     def list_memberships(self, request, *args, **kwargs):
-        instance = self.get_object()
-        memberships = instance.membership.all()
-        serializer = MembershipSerializer(memberships, many=True)
-        return Response(serializer.data)
+        try:
+            instance: Organization = self.get_object()
+            memberships = instance.membership.filter(
+                organization=instance, user=request.user
+            )
+            assert memberships is not None
+            assert len(memberships) > 0
+            serializer = MembershipSerializer(memberships, many=True)
+            return Response(serializer.data)
+        except Organization.DoesNotExist:
+            return Response({"error": "Organization not found"}, status=404)
 
     def add_membership(self, request, *args, **kwargs):
         organization = self.get_object()

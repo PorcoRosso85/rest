@@ -102,6 +102,7 @@ class OrganizationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Organization
         fields = [
+            "id",
             "name",
             "icon",
             "created_at",
@@ -125,6 +126,7 @@ class TestOrganizationSerializer:
         serializer = OrganizationSerializer(organization)
 
         expected_fields = [
+            "id",
             "name",
             "icon",
             "created_at",
