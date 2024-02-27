@@ -103,6 +103,19 @@ def create_membership(sender, instance, created, **kwargs):
         ).exists()
 
 
+# @receiver(post_save, sender=Organization)
+# def keep_one_owner(sender, instance, created, **kwargs):
+#     if created:
+#         membership = Membership.objects.filter(organization=instance)
+#         if membership.filter(role="owner").count() == 0:
+#             Membership.objects.create(
+#                 user=instance.owner, organization=instance, role="owner"
+#             )
+#         else:
+#             membership.exclude(user=instance.owner).update(role="member")
+#             raise ValueError("owner is already exists")
+
+
 class TestOrganizationModel:
     @pytest.fixture
     def org_and_user(self):
@@ -190,10 +203,6 @@ class TestOrganizationModel:
         assert old_owner.first().role == "member"
         assert old_owner.count() == memberships.count()
 
-        # []todo
-        # ownerは一人しか存在しない
-        # assert organization.membership.role.filter(user=user).count() == 0
-
     @pytest.mark.django_db
     def test200_組織アイコンをサーバーに保存および取得ができる(self, org_and_user):
         file = SimpleUploadedFile("icon.png", b"file_content", content_type="image/png")
@@ -227,6 +236,27 @@ class TestOrganizationModel:
 
         # ファイルを削除する
         organization.icon.delete()
+
+    @pytest.mark.skip(
+        "keep_one_ownerでapp_membershipテーブルが関連されない問題が発生する"
+    )
+    @pytest.mark.django_db
+    def test200_オーナーが一人しかいないことをsave前に確認する(self, org_and_user):
+        memberships = self.organization.membership.filter(
+            organization=self.organization
+        )
+        assert memberships.count() == 1
+        for membership in memberships:
+            assert membership.role == "owner"
+
+        new_user = User.objects.create(name="new user")
+        self.organization.add_membership(new_user, "owner")
+        memberships = self.organization.membership.filter(
+            organization=self.organization
+        )
+        assert memberships.count() == 2
+        for membership in memberships:
+            assert membership.role == "owner"
 
 
 class Membership(models.Model):
