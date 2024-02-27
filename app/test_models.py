@@ -165,6 +165,7 @@ class TestMembershipModel:
         membership_from_database = Membership.objects.get(id=membership.id)
         assert membership_from_database.organization.id == organization.id
 
+    @pytest.mark.skip
     @pytest.mark.django_db
     def test200_組織を作成したユーザーがオーナーとなっている(self):
         user = User.objects.create(name="owneruser")

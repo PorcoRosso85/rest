@@ -1,4 +1,5 @@
 import pytest
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.test import APIClient
 from rest_framework.views import APIView
@@ -298,3 +299,4 @@ class SpaceView(ModelViewSet):
 class UserView(ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated]
