@@ -81,6 +81,10 @@ test_design_for_organization = {
     ],
     "組織の削除": [
         "認証されたオーナーにより組織が削除される",
+        TestOrganizationModel.test200_組織を削除できる,
+        TestOrganizationModel.test200_組織オーナーをメンバーシップから取得できる,
+        TestOrganizationView.test200_組織オーナーは組織を削除できる,
+        TestOrganizationView.test200_組織オーナー以外のメンバーシップは組織を削除できない,
         "組織削除後、関連するスペースやデータが削除される",
         "未認証ユーザーが組織削除を試みた場合のエラーハンドリング",
         "オーナー以外のユーザーが組織削除を試みた場合のエラーハンドリング",
