@@ -85,7 +85,6 @@ class Organization(models.Model):
     def get_role(self, *args, **kwargs):
         user_id = kwargs.pop("user_id", None)
         assert user_id is not None
-        # assert self.id == 1
         membership = Membership.objects.filter(user_id=user_id, organization=self)
         assert membership.exists()
         assert membership.first().role is not None
@@ -102,28 +101,36 @@ class TestOrganizationModel:
 
         yield self.organization, self.user
 
+        print("\n### TEST END")
         print("\n### TEARDOWN")
-        if self.organization:
-            # self.organization.delete()
+        if Organization.objects.exists():
             Organization.objects.all().delete()
-        if self.user:
-            # self.user.delete()
-            User.objects.all().delete()
         assert Organization.objects.count() == 0
+        print(" no organization")
+
+        if User.objects.exists():
+            User.objects.all().delete()
         assert User.objects.count() == 0
+        print(" no user")
+
+        if Membership.objects.exists():
+            Membership.objects.all().delete()
+        print(" no membership")
 
     @pytest.mark.django_db
     def test200_組織メンバーのロールを取得する(self, org_and_user):
-        self.organization.create(user=self.user)
-        assert self.organization.id is not None
+        membership = Membership.objects.create(
+            user=self.user, organization=self.organization
+        )
         assert self.organization.membership.exists()
         role = self.organization.get_role(user_id=self.user.id)
-        assert role == "owner"
+        assert role == "member"
 
     @pytest.mark.django_db
     def test200_組織メンバーのロールを更新する(self, org_and_user):
-        self.organization.create(user=self.user)
-        assert self.organization.id is not None
+        membership = Membership.objects.create(
+            user=self.user, organization=self.organization, role="owner"
+        )
         assert self.organization.membership.exists()
         role = self.organization.get_role(user_id=self.user.id)
         assert role == "owner"
@@ -134,10 +141,8 @@ class TestOrganizationModel:
 
     @pytest.mark.django_db
     def test200_組織メンバーを追加できる(self, org_and_user):
-        user = User.objects.create(name="test user")
-        organization = Organization.objects.create(name="test")
-        organization.add_membership(user, "member")
-        membership = organization.membership.filter(user=user)
+        self.organization.add_membership(self.user, "member")
+        membership = self.organization.membership.filter(user=self.user)
         assert membership.exists()
         assert membership.first().role == "member"
 
