@@ -396,7 +396,7 @@ class TestOrganizationView:
         assert response.status_code == 200
 
     @pytest.mark.django_db
-    def test200_オーナーが組織を削除できる(self):
+    def test200_組織オーナーは組織を削除できる(self):
         print(f"### self.organization_instance.id: {self.organization_instance.id}")
         print("組織インスタンスがモデル上でselfとなっていることを確認した")
 
@@ -419,9 +419,7 @@ class TestOrganizationView:
         assert response.status_code == 204
 
     @pytest.mark.django_db
-    def test403_オーナー以外のユーザーが組織削除を試行した場合のエラーハンドリングが適切である(
-        self,
-    ):
+    def test403_組織オーナー以外のメンバーシップは組織を削除できない(self):
         new_user = User.objects.create(name="new user")
         membership = Membership.objects.create(
             user=new_user,
@@ -440,28 +438,20 @@ class TestOrganizationView:
 
 
 class TestUserView:
-    def setup_method(self, method):
-        print("\n### SETUP")
-        self.organization_instance = None
-        self.user_instance = None
-        self.organization_instance = Organization.objects.create(name="test org")
+    @pytest.fixture(autouse=True)
+    def fixture_setup_teardown(self):
         self.user_instance = User.objects.create(name="test user")
-        self.space_instance = Space.objects.create(
-            name="test space", organization=self.organization_instance
-        )
-
         self.client = APIClient()
+        self.client.force_authenticate(user=self.user_instance)
 
-    def teardown_method(self, method):
-        print("\n### TEARDOWN")
-        if self.organization_instance:
-            # self.organization.delete()
-            Organization.objects.all().delete()
-        if self.user_instance:
-            # self.user.delete()
+        yield self.user_instance, self.client
+
+        if User.objects.count() > 0:
             User.objects.all().delete()
-        assert Organization.objects.count() == 0
         assert User.objects.count() == 0
+        if self.client:
+            self.client = None
+        assert self.client is None
 
     @pytest.mark.django_db
     def test200_ユーザー一覧を取得できる(self):
@@ -483,3 +473,22 @@ class TestUserView:
         response = self.client.get(reverse("user-list"))
         assert response.status_code == 200
         assert len(response.data) == 0
+
+    @pytest.mark.django_db
+    def test200_ログインユーザーの情報を取得できる(self):
+        response = self.client.get(
+            reverse("user-detail", kwargs={"pk": self.user_instance.id})
+        )
+        assert response.status_code == 200
+        assert response.data["name"] == self.user_instance.name
+
+    @pytest.mark.django_db
+    def test400_ログインユーザー以外のユーザーが情報を取得できない(self):
+        self.client.force_authenticate(user=None)
+
+        new_user = User.objects.create(name="new user")
+        response = self.client.get(reverse("user-detail", kwargs={"pk": new_user.id}))
+        assert response.status_code == 403
+        # assert "Forbidden" in response.data["detail"]
+        assert "Authentication" in response.data["detail"]
+        # assert "Forbidden" in response.content.decode("utf-8")

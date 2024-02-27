@@ -5,7 +5,6 @@ from core.tests.test_urls import TestOrganizationView, TestUserView
 
 test_design_for_organization = {
     "組織の作成": [
-        TestOrganizationModel.test200_最低1人のオーナーが存在する,
         TestOrganizationView.test200_作成したユーザーとオーナーが一致する,
         "組織を作成したユーザーがメンバーとして関連する",
         {"組織が作成されない": []},
@@ -83,8 +82,8 @@ test_design_for_organization = {
         "認証されたオーナーにより組織が削除される",
         TestOrganizationModel.test200_組織を削除できる,
         TestOrganizationModel.test200_組織オーナーをメンバーシップから取得できる,
+        TestOrganizationView.test403_組織オーナー以外のメンバーシップは組織を削除できない,
         TestOrganizationView.test200_組織オーナーは組織を削除できる,
-        TestOrganizationView.test200_組織オーナー以外のメンバーシップは組織を削除できない,
         "組織削除後、関連するスペースやデータが削除される",
         "未認証ユーザーが組織削除を試みた場合のエラーハンドリング",
         "オーナー以外のユーザーが組織削除を試みた場合のエラーハンドリング",
