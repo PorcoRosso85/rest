@@ -83,6 +83,7 @@ class Organization(models.Model):
         # []check ストレージからの削除はおこなうか
 
     def get_role(self, *args, **kwargs):
+        print(f" ### self.id: {self.id}")
         user_id = kwargs.pop("user_id", None)
         assert user_id is not None
         membership = Membership.objects.filter(user_id=user_id, organization=self)

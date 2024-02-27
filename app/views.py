@@ -183,7 +183,7 @@ class OrganizationView(ModelViewSet):
         assert user_id is not None
         organization = self.get_object()
         try:
-            role = organization.get_role(user_id=user_id)
+            role, org_id = organization.get_role(user_id=user_id)
             assert role in ["owner", "admin", "member"]
             if role == "owner":
                 assert role == "owner"

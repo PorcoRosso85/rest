@@ -341,12 +341,19 @@ class TestOrganizationView:
         )
         assert response.status_code == 200
 
-    # []fixme
-    @pytest.mark.skip(
-        "テストのOrgインスタンスとモデル上のself.organization_instanceが異なるためテストをスキップ"
-    )
     @pytest.mark.django_db
     def test200_オーナーが組織を削除できる(self):
+        print(f"### self.organization_instance.id: {self.organization_instance.id}")
+        print("組織インスタンスがモデル上でselfとなっていることを確認した")
+
+        print(f"### self.user_instance.id: {self.user_instance.id}")
+
+        membership = Membership.objects.create(
+            user=self.user_instance,
+            organization=self.organization_instance,
+            role="owner",
+        )
+
         response = self.client.delete(
             reverse(
                 "organization-detail",
@@ -358,10 +365,24 @@ class TestOrganizationView:
         assert response.status_code == 204
 
     @pytest.mark.django_db
-    def test400_オーナー以外のユーザーが組織削除を試行した場合のエラーハンドリングが適切である(
+    def test403_オーナー以外のユーザーが組織削除を試行した場合のエラーハンドリングが適切である(
         self,
     ):
-        pass
+        new_user = User.objects.create(name="new user")
+        membership = Membership.objects.create(
+            user=new_user,
+            organization=self.organization_instance,
+        )
+        response = self.client.delete(
+            reverse(
+                "organization-detail",
+                # []fixme new_userの組織が見つからない
+                kwargs={"pk": self.organization_instance.id},
+            ),
+            data={"user_id": new_user.id},
+            format="json",
+        )
+        assert response.status_code == 403
 
 
 class TestUserView:
