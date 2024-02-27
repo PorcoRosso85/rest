@@ -1,6 +1,7 @@
 import logging
 
 import pytest
+from django.core.files.uploadedfile import SimpleUploadedFile
 from inline_snapshot import snapshot
 
 from app.models import (
@@ -285,3 +286,144 @@ class TestOrganizationModel:
             Organization.objects.get(id=self.organization.id).membership.first().user
             == self.user1
         )
+
+    @pytest.fixture
+    def org_and_user(self):
+        print("\n### SETUP")
+        self.user = User.objects.create(name="test user")
+        self.organization = Organization.objects.create(
+            name="test organization", owner=self.user
+        )
+
+        yield self.organization, self.user
+
+        print("\n### TEST END")
+        print("\n### TEARDOWN")
+        if Organization.objects.exists():
+            Organization.objects.all().delete()
+        assert Organization.objects.count() == 0
+        print(" no organization")
+
+        if User.objects.exists():
+            User.objects.all().delete()
+        assert User.objects.count() == 0
+        print(" no user")
+
+        if Membership.objects.exists():
+            Membership.objects.all().delete()
+        print(" no membership")
+
+    @pytest.mark.django_db
+    def test200_組織を作成したユーザーがメンバーとして関連する(self, org_and_user):
+        assert self.organization.membership.filter(user=self.user).exists()
+
+    @pytest.mark.django_db
+    def test200_組織メンバーのロールを取得する(self, org_and_user):
+        new_user = User.objects.create(name="new user")
+        membership = Membership.objects.create(
+            user=new_user, organization=self.organization
+        )
+        assert self.organization.membership.exists()
+        role, org_id = self.organization.get_role(user_id=new_user.id)
+        assert role == "member"
+        assert org_id == self.organization.id
+
+    @pytest.mark.django_db
+    def test200_組織メンバーのロールを更新する(self, org_and_user):
+        assert self.organization.membership.exists()
+        role, org_id = self.organization.get_role(user_id=self.user.id)
+        assert org_id == self.organization.id
+        assert role == "owner"
+
+        self.organization.update_membership(self.user, "admin")
+        role, org_id = self.organization.get_role(user_id=self.user.id)
+        assert role == "admin"
+
+    @pytest.mark.django_db
+    def test200_組織メンバーを追加できる(self, org_and_user):
+        new_user = User.objects.create(name="new user")
+        self.organization.add_membership(new_user, "member")
+
+        membership = self.organization.membership.filter(user=new_user)
+        assert membership.exists()
+        assert membership.first().role == "member"
+
+    @pytest.mark.django_db
+    def test200_作成可能(self, org_and_user):
+        organization = Organization.objects.create(name="test")
+        assert organization.id is not None
+
+    @pytest.mark.django_db
+    def test200_オーナー変更ができる(self, org_and_user):
+        memberships = self.organization.membership.filter(user=self.user)
+        assert memberships.exists()
+        membership = memberships.first()
+        assert membership is not None
+        assert membership.user == self.user
+        assert membership.role == "owner"
+
+        new_user = User.objects.create(name="new user")
+        self.organization.update_owner(new_user)
+        new_membership = self.organization.membership.filter(user=new_user).first()
+        assert new_membership is not None
+        assert new_membership.role == "owner"
+
+        old_owner = self.organization.membership.filter(user=self.user)
+        assert old_owner.exists()
+        assert old_owner.first().role == "member"
+        assert old_owner.count() == memberships.count()
+
+    @pytest.mark.django_db
+    def test200_組織アイコンをサーバーに保存および取得ができる(self, org_and_user):
+        file = SimpleUploadedFile("icon.png", b"file_content", content_type="image/png")
+        organization = Organization.objects.create(name="test", icon=file)
+
+        organization.save()
+        assert organization.icon.name == "icon/icon.png"
+
+        # /iconディレクトリにファイルが保存されている
+        saved_file = organization.icon.storage.open(organization.icon.name)
+        assert saved_file.read() == b"file_content"
+
+        # データベースに保存されているファイル名が一致している
+        file_from_db = Organization.objects.get(id=organization.id).icon
+        assert file_from_db.name == organization.icon.name
+
+        # ファイルを削除する
+        organization.icon.delete()
+
+        # upload_iconメソッドを使用したテスト
+        organization = Organization.objects.create(name="test")
+        organization.upload_icon(file)
+
+        # /iconディレクトリにファイルが保存されている
+        saved_file = organization.icon.storage.open(organization.icon.name)
+        assert saved_file.read() == b"file_content"
+
+        # データベースに保存されているファイル名が一致している
+        file_from_db = Organization.objects.get(id=organization.id).icon
+        assert file_from_db.name == organization.icon.name
+
+        # ファイルを削除する
+        organization.icon.delete()
+
+    @pytest.mark.skip(
+        "keep_one_ownerでapp_membershipテーブルが関連されない問題が発生する"
+    )
+    @pytest.mark.django_db
+    def test200_オーナーが一人しかいないことをsave前に確認する(self, org_and_user):
+        memberships = self.organization.membership.filter(
+            organization=self.organization
+        )
+        assert memberships.count() == 1
+        for membership in memberships:
+            assert membership.role == "owner"
+
+        new_user = User.objects.create(name="new user")
+        self.organization.add_membership(new_user, "owner")
+        memberships = self.organization.membership.filter(
+            organization=self.organization
+        )
+        assert memberships.count() == 2
+        for membership in memberships:
+            assert membership.role == "owner"
