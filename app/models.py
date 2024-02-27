@@ -95,14 +95,14 @@ class Organization(models.Model):
 
 class TestOrganizationModel:
     def setup_method(self, method):
-        print("\n ### setup before each test method")
+        print("\n### SETUP")
         self.organization = None
         self.user = None
         self.organization = Organization.objects.create(name="test organization")
         self.user = User.objects.create(name="test user")
 
     def teardown_method(self, method):
-        print("\n ### teardown after each test method")
+        print("\n### TEARDOWN")
         if self.organization:
             # self.organization.delete()
             Organization.objects.all().delete()

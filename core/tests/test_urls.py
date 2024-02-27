@@ -10,13 +10,32 @@ from app.utils import logger
 
 
 class TestOrganizationView:
-    def setup_method(self):
-        self.client = APIClient()
+    def setup_method(self, method):
+        print("\n### SETUP")
+        self.organization_instance = None
+        self.user_instance = None
         self.organization_instance = Organization.objects.create(name="test org")
         self.user_instance = User.objects.create(name="test user")
         self.space_instance = Space.objects.create(
             name="test space", organization=self.organization_instance
         )
+
+        self.client = APIClient()
+
+    def teardown_method(self, method):
+        print("\n### TEARDOWN")
+        if self.organization_instance:
+            # self.organization.delete()
+            Organization.objects.all().delete()
+        if self.user_instance:
+            # self.user.delete()
+            User.objects.all().delete()
+        assert Organization.objects.count() == 0
+        assert User.objects.count() == 0
+
+    @pytest.mark.django_db
+    def test_OrganizationテストインスタンスがOrganization各メソッドで使用される(self):
+        pass
 
     @pytest.mark.django_db
     def test200_組織を作成しレスポンスできる(self):
@@ -141,28 +160,6 @@ class TestOrganizationView:
             format="json",
         )
         assert response.status_code == 200
-        # assert response.data["membership"] == snapshot(
-        #     [
-        #         OrderedDict(
-        #             {
-        #                 "user": 13,
-        #                 "organization": 15,
-        #                 "role": "member",
-        #                 "created_at": "2024-02-26T01:37:54.854126Z",
-        #                 "updated_at": "2024-02-26T01:37:54.862010Z",
-        #             }
-        #         ),
-        #         OrderedDict(
-        #             {
-        #                 "user": 14,
-        #                 "organization": 15,
-        #                 "role": "owner",
-        #                 "created_at": "2024-02-26T01:37:54.862861Z",
-        #                 "updated_at": "2024-02-26T01:37:54.862871Z",
-        #             }
-        #         ),
-        #     ]
-        # )
 
         # 既存ユーザーのロールが変更されている
         existing_owner = self.organization_instance.membership.filter(
@@ -250,17 +247,6 @@ class TestOrganizationView:
 
     @pytest.mark.django_db
     def test400_組織メンバーの削除ができない(self):
-        """メンバーが存在しないため削除できない"""
-        # with pytest.raises(Exception):
-        #     response = self.client.delete(
-        #         reverse(
-        #             "organization-update-membership",
-        #             kwargs={"pk": self.organization_instance.id},
-        #         ),
-        #         data={"user_id": 9999},
-        #         format="json",
-        #     )
-
         response = self.client.delete(
             reverse(
                 "organization-update-membership",
@@ -348,7 +334,6 @@ class TestOrganizationView:
     )
     @pytest.mark.django_db
     def test200_オーナーが組織を削除できる(self):
-        self.organization_instance.save()
         response = self.client.delete(
             reverse(
                 "organization-detail",
