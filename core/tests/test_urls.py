@@ -5,13 +5,13 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from rest_framework.test import APIClient
 
-from app.models import Organization, Space, User
+from app.models import Membership, Organization, Space, User
 from app.utils import logger
 
 
 class TestOrganizationView:
-    @pytest.mark.skip
-    def setup_method(self, method):
+    @pytest.fixture(autouse=True)
+    def setup_teardown(self):
         print("\n### SETUP")
         self.organization_instance = Organization.objects.create(name="test org")
         self.user_instance = User.objects.create(name="test user")
@@ -21,17 +21,30 @@ class TestOrganizationView:
 
         self.client = APIClient()
 
-    @pytest.mark.skip
-    def teardown_method(self, method):
+        yield (
+            self.organization_instance,
+            self.user_instance,
+            self.space_instance,
+            self.client,
+        )
+
         print("\n### TEARDOWN")
-        if self.organization_instance:
-            # self.organization.delete()
+        if Organization.objects.count() > 0:
             Organization.objects.all().delete()
-        if self.user_instance:
-            # self.user.delete()
-            User.objects.all().delete()
         assert Organization.objects.count() == 0
+        if User.objects.count() > 0:
+            User.objects.all().delete()
         assert User.objects.count() == 0
+        if Space.objects.count() > 0:
+            Space.objects.all().delete()
+        assert Space.objects.count() == 0
+        if Membership.objects.count() > 0:
+            Membership.objects.all().delete()
+        assert Membership.objects.count() == 0
+
+        if self.client:
+            self.client = None
+        assert self.client is None
 
     @pytest.mark.django_db
     def test_OrganizationテストインスタンスがOrganization各メソッドで使用される(self):
