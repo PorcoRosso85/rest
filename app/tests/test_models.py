@@ -288,6 +288,30 @@ class TestOrganizationModel:
         )
 
     @pytest.fixture
+    def fixture_org(self):
+        print("\n### SETUP")
+        self.organization = Organization.objects.create(name="test organization")
+
+        yield self.organization
+
+        print("\n### TEST END")
+        print("\n### TEARDOWN")
+        if Organization.objects.exists():
+            Organization.objects.all().delete()
+        assert Organization.objects.count() == 0
+        print(" no organization")
+
+    @pytest.mark.django_db
+    def test200_組織名を変更できる(self, fixture_org):
+        self.organization.update_name("new name")
+        assert self.organization.name == "new name"
+
+    @pytest.mark.django_db
+    def test200_組織プランを変更できる(self, fixture_org):
+        self.organization.update_plan("new plan")
+        assert self.organization.plan == "new plan"
+
+    @pytest.fixture
     def org_and_user(self):
         print("\n### SETUP")
         self.user = User.objects.create(name="test user")

@@ -93,6 +93,14 @@ class Organization(models.Model):
         assert membership.first().role in ["owner", "admin", "member"]
         return membership.first().role, self.id
 
+    def update_name(self, name):
+        self.name = name
+        self.save()
+
+    def update_plan(self, plan):
+        self.plan = plan
+        self.save()
+
 
 @receiver(post_save, sender=Organization)
 def create_membership(sender, instance, created, **kwargs):
