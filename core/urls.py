@@ -109,4 +109,11 @@ urlpatterns = [
         views.UserView.as_view({"get": "list", "post": "create"}),
         name="user-list",
     ),
+    path(
+        "user/<int:pk>/detail/",
+        views.UserView.as_view(
+            {"get": "retrieve", "put": "update", "delete": "destroy"}
+        ),
+        name="user-detail",
+    ),
 ]

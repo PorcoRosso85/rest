@@ -436,6 +436,23 @@ class TestOrganizationView:
         )
         assert response.status_code == 403
 
+    @pytest.mark.django_db
+    def test400_組織オーナーでないメンバーシップは組織情報を変更できない(self):
+        """組織オーナーでないメンバーシップは組織情報を変更できない"""
+        response = self.client.put(
+            reverse(
+                "organization-detail",
+                kwargs={"pk": self.organization_instance.id},
+            ),
+            data={"name": "new org name"},
+            format="json",
+        )
+        assert response.status_code == 403
+
+    @pytest.mark.django_db
+    def test200_組織オーナーは組織情報を変更できる(self):
+        pass
+
 
 class TestUserView:
     @pytest.fixture(autouse=True)
