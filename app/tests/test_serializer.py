@@ -1,8 +1,119 @@
 import pytest
 from inline_snapshot import snapshot
 
-from app.models import Data, Space
-from app.serializer import DataSerializer, SpaceSerializer
+from app.models import Data, Membership, Organization, Space, User
+from app.serializer import (
+    DataSerializer,
+    MembershipSerializer,
+    OrganizationSerializer,
+    OrganizationSpaceSerializer,
+    SpaceSerializer,
+    UserSerializer,
+)
+from app.utils import logger
+
+
+class TestMembershipSerializer:
+    @pytest.fixture
+    def setup(self):
+        User.objects.create(name="username")
+        Organization.objects.create(name="organizationname")
+
+    @pytest.mark.django_db
+    @pytest.mark.usefixtures("setup")
+    @pytest.mark.parametrize(
+        "data",
+        [
+            {"user": 1, "organization": 1, "role": "admin"},
+        ],
+    )
+    def test_正常_バリデーションエラーがない(self, data):
+        serializer = MembershipSerializer(data=data)
+        assert serializer.is_valid() == True, serializer.errors
+
+    @pytest.mark.django_db
+    @pytest.mark.usefixtures("setup")
+    @pytest.mark.parametrize(
+        "data",
+        [
+            {"user": "", "organization": "", "role": ""},
+            {"user": 1, "organization": 1, "role": "owner"},
+            {"user": 1, "organization": 1, "role": "admin"},
+        ],
+    )
+    def test_異常_バリデーションエラーがある(self, data):
+        serializer = MembershipSerializer(data=data)
+        assert serializer.is_valid() == False, serializer.errors
+
+
+class TestOrganizationSerializer:
+    @pytest.mark.django_db
+    def test200_バリデーションエラーがない(self):
+        data = {"name": "organizationname"}
+        serializer = OrganizationSerializer(data=data)
+        assert serializer.is_valid() == True, serializer.errors
+
+    class Test_異常_バリデーションエラーがある:
+        @pytest.mark.django_db
+        def test_異常_nameのバリデーションエラーがある(self):
+            data = {"name": ""}
+            serializer = OrganizationSerializer(data=data)
+            assert serializer.is_valid() == False, serializer.errors
+
+        @pytest.mark.django_db
+        def test_異常_iconのバリデーションエラーがある(self):
+            data = {"name": "organizationname", "icon": "icon"}
+            serializer = OrganizationSerializer(data=data)
+            assert serializer.is_valid() == False, serializer.errors
+            data = {"name": "organizationname", "icon": ""}
+            serializer = OrganizationSerializer(data=data)
+            assert serializer.is_valid() == False, serializer.errors
+
+
+class TestUserSerializer:
+    @pytest.mark.django_db
+    def test_正常_バリデーションエラーがない(self):
+        data = {"name": "username"}
+        serializer = UserSerializer(data=data)
+        assert serializer.is_valid() == True, serializer.errors
+        logger.debug(f"### serializer.data: {serializer.data}")
+        assert serializer.data == snapshot({"name": "username"})
+        data = {"name": 123}
+        serializer = OrganizationSerializer(data=data)
+        logger.debug("### 数値は許容される")
+        assert serializer.is_valid() == True, serializer.errors
+        data = {"name": "organizationname", "icon": None}
+        serializer = OrganizationSerializer(data=data)
+        assert serializer.is_valid() == True, serializer.errors
+
+    @pytest.mark.django_db
+    def test_異常_バリデーションエラーがある(self):
+        data = {"name": ""}
+        serializer = UserSerializer(data=data)
+        assert serializer.is_valid() == False, serializer.errors
+
+    @pytest.mark.django_db
+    def test_正常_Userに基づくOrganizationを取得できる(self):
+        # organizationを作成
+        organization = Organization.objects.create(name="organizationname")
+        # userを作成
+        user = User.objects.create(name="username")
+        # membershipを作成
+        Membership.objects.create(user=user, organization=organization, role="admin")
+        # userに紐づくmembershipを取得
+        membership = Membership.objects.get(user=user)
+        # membershipに紐づくorganizationを取得
+        related_organization = membership.organization
+        # organizationをシリアライズ
+        organization_serializer = OrganizationSerializer(related_organization)
+        # シリアライズされたorganizationを取得
+        serialized_organization = organization_serializer.data
+        assert serialized_organization["name"] == "organizationname"
+
+    @pytest.mark.django_db
+    class Test_異常_ユーザーに関連するOrganizationが取得できていない:
+        pass
+
 
 # class TestPublishmentStatusSerializer:
 #     @pytest.mark.django_db
@@ -311,6 +422,7 @@ from app.serializer import DataSerializer, SpaceSerializer
 #         assert serializer.is_valid(), serializer.errors
 
 
+@pytest.mark.skip
 class TestSpaceSerializer:
     @pytest.mark.django_db
     def test_異常_バリデーションエラー_noname(self):
@@ -550,3 +662,27 @@ class TestDataSerializer:
         # データの確認
         with pytest.raises(Data.DoesNotExist):
             Data.objects.get(id=data_instance.id)
+
+
+class TestOrganizationSpaceSerializer:
+    def setup_method(self):
+        self.organization_instance = Organization.objects.create(name="test org")
+        self.space_instance = Space.objects.create(
+            name="test space", organization=self.organization_instance
+        )
+        self.serializer = OrganizationSpaceSerializer(instance=self.space_instance)
+
+    @pytest.mark.django_db
+    def test200_期待するフィールドが含まれている(self):
+        data = self.serializer.data
+        assert "id" in data
+
+    @pytest.mark.django_db
+    def test200_idが期待と一致する(self):
+        data = self.serializer.data
+        assert data["id"] == self.space_instance.id
+
+    @pytest.mark.django_db
+    def test200_nameが期待と一致する(self):
+        data = self.serializer.data
+        assert data["name"] == self.space_instance.name

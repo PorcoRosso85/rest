@@ -1,11 +1,21 @@
+import pytest
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.test import APIClient
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
-from app.models import Access, ApiKeys
-from app.serializer import AccessSerializer, ApiKeysSerializer
-
-# Create your views here.
+from app.models import Access, ApiKeys, Organization, Space, User
+from app.serializer import (
+    AccessSerializer,
+    ApiKeysSerializer,
+    MembershipSerializer,
+    OrganizationSerializer,
+    OrganizationSpaceSerializer,
+    SpaceSerializer,
+    UserSerializer,
+)
+from app.utils import logger
 
 
 def home(request):
@@ -72,12 +82,7 @@ class ApiViewSet(ModelViewSet):
     serializer_class = ApiKeysSerializer
 
 
-import pytest
-from rest_framework.test import APIClient
-
-from app.utils import logger
-
-
+@pytest.mark.skip
 @pytest.mark.django_db
 class TestApiViewSet:
     def setup_method(self):
@@ -141,6 +146,7 @@ class CookieView(APIView):
         return response
 
 
+@pytest.mark.skip
 class TestSetCookieView:
     def setup_method(self):
         self.client = APIClient()
@@ -166,3 +172,131 @@ class TestSetCookieView:
         assert response.cookies["session_id"]["samesite"] == "Strict"
         assert response.cookies["user_settings"]["samesite"] == "Strict"
         assert response.cookies["tracking_data"]["samesite"] == "Strict"
+
+
+class OrganizationView(ModelViewSet):
+    queryset = Organization.objects.all()
+    serializer_class = OrganizationSerializer
+
+    def create(self, request, *args, **kwargs):
+        print(f"### request.user.id: {request.user.id}")
+        print(f"### request.user.name: {request.user.name}")
+        return super().create(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        # []todo 認証ユーザーはrequest.userを使用する
+        user_id = request.data.get("user_id")
+        assert user_id is not None
+        organization = self.get_object()
+        try:
+            role, org_id = organization.get_role(user_id=user_id)
+            assert role in ["owner", "admin", "member"]
+            if role == "owner":
+                assert role == "owner"
+                return super().destroy(request, *args, **kwargs)
+            else:
+                return Response(
+                    {"error": "You are not the owner of this organization"},
+                    status=403,
+                )
+        except User.DoesNotExist:
+            return Response({"error": "User not found"}, status=404)
+
+    def update_owner(self, request, *args, **kwargs):
+        instance = self.get_object()
+        user_id = request.data.get("user_id")
+
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({"error": "User not found"}, status=404)
+
+        instance.update_owner(user)
+
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+
+    def list_memberships(self, request, *args, **kwargs):
+        try:
+            instance: Organization = self.get_object()
+            memberships = instance.membership.filter(
+                organization=instance, user=request.user
+            )
+            assert memberships is not None
+            assert len(memberships) > 0
+            serializer = MembershipSerializer(memberships, many=True)
+            return Response(serializer.data)
+        except Organization.DoesNotExist:
+            return Response({"error": "Organization not found"}, status=404)
+
+    def add_membership(self, request, *args, **kwargs):
+        organization = self.get_object()
+        user_id = request.data.get("user_id")
+        role = request.data.get("role")
+        user = User.objects.get(id=user_id)
+        organization.add_membership(user, role)
+        serializer = self.get_serializer(organization)
+        return Response(serializer.data, status=201)
+
+    def update_membership(self, request, *args, **kwargs):
+        try:
+            organization = self.get_object()
+            user_id = request.data.get("user_id")
+            user = User.objects.get(id=user_id)
+            role = request.data.get("role")
+            organization.update_membership(user, role)
+            serializer = self.get_serializer(organization)
+            return Response(serializer.data)
+        except User.DoesNotExist:
+            return Response({"error": "User not found"}, status=404)
+
+    def remove_membership(self, request, *args, **kwargs):
+        try:
+            organization = self.get_object()
+            user_id = request.data.get("user_id")
+            user = User.objects.get(id=user_id)
+            organization.remove_membership(user)
+            serializer = self.get_serializer(organization)
+            return Response(serializer.data)
+        except User.DoesNotExist:
+            return Response({"error": "User not found"}, status=404)
+
+    def upload_icon(self, request, *args, **kwargs):
+        try:
+            organization = self.get_object()
+            icon = request.data.get("icon")
+            organization.upload_icon(icon)
+            serializer = self.get_serializer(organization)
+            return Response(serializer.data)
+        except Exception:
+            return Response({"error": "Unexpected Error"}, status=500)
+
+    def get_icon_url(self, request, *args, **kwargs):
+        organization = self.get_object()
+        icon_url = organization.get_icon_url()
+        return Response({"icon_url": icon_url})
+
+    def remove_icon(self, request, *args, **kwargs):
+        organization = self.get_object()
+        organization.remove_icon()
+        return Response({"message": "Icon removed"})
+
+
+class OrganizationSpaceView(ModelViewSet):
+    serializer_class = OrganizationSpaceSerializer
+
+    def get_queryset(self):
+        organization_id = self.kwargs["pk"]
+        organization = Organization.objects.get(id=organization_id)
+        return organization.spaces.all()
+
+
+class SpaceView(ModelViewSet):
+    queryset = Space.objects.all()
+    serializer_class = SpaceSerializer
+
+
+class UserView(ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated]

@@ -16,7 +16,7 @@ from app.utils import logger
 
 
 @receiver(post_save, sender=Data)
-def fill_published_at(sender, instance, created, **kwargs):
+def fill_published_at(sender: Data, instance: Data, created: bool, **kwargs):
     logger.debug("### fill_published_at SIGNAL for Data Model")
     if instance._published_at is None:
         instance._published_at = timezone.now()

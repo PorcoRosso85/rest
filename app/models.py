@@ -1,21 +1,31 @@
 import uuid
 
 from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from django.utils import timezone
 
 
 class User(models.Model):
-    """Userの情報を管理する"""
-
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    @property
+    def is_authenticated(self):
+        return True
+
+
+def get_default_user() -> int:
+    user = User.objects.first()
+    if user:
+        return user.id
+    new_user = User.objects.create()
+    return new_user.id
+
 
 class Organization(models.Model):
-    """Userの所属先であり 複数のSpaceを持つことができる"""
-
     PLAN_OPTIONS = [
         ("free", "Free"),
         ("standard", "Standard"),
@@ -23,7 +33,7 @@ class Organization(models.Model):
     ]
 
     id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, blank=False)
     icon = models.ImageField(upload_to="icon/", blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -31,10 +41,99 @@ class Organization(models.Model):
     plan_created_at = models.DateTimeField(default=timezone.now)
     plan_updated_at = models.DateTimeField(default=timezone.now)
 
+    def __init__(self, *args, **kwargs):
+        self.owner = kwargs.pop("owner", None)
+        super().__init__(*args, **kwargs)
+
+    def update_owner(self, user):
+        # []fixme
+        membership = Membership.objects.filter(organization=self, role="owner")
+        # assert membership.exists()
+        if membership.exists():
+            for member in membership:
+                member.role = "member"
+                member.save()
+        Membership.objects.create(user=user, organization=self, role="owner")
+
+    def add_membership(self, user, role):
+        Membership.objects.create(user=user, organization=self, role=role)
+
+    def update_membership(self, user, role):
+        membership = Membership.objects.filter(user=user, organization=self)
+        if membership.exists():
+            membership.update(role=role)
+        else:
+            raise ValueError("membership not found")
+
+    def remove_membership(self, user):
+        membership = Membership.objects.filter(user=user, organization=self)
+        if membership.exists():
+            membership.delete()
+        else:
+            raise ValueError("membership not found")
+
+    def upload_icon(self, icon):
+        self.icon = icon
+        self.save()
+
+    def get_icon_url(self):
+        return self.icon.url
+
+    def remove_icon(self):
+        self.icon.delete()
+        # []check ストレージからの削除はおこなうか
+
+    def get_role(self, *args, **kwargs):
+        print(f" ### self.id: {self.id}")
+        user_id = kwargs.pop("user_id", None)
+        assert user_id is not None
+        membership = Membership.objects.filter(user_id=user_id, organization=self)
+        assert membership.exists()
+        assert membership.first().role is not None
+        assert membership.first().role in ["owner", "admin", "member"]
+        return membership.first().role, self.id
+
+    def update_name(self, name):
+        self.name = name
+        self.save()
+
+    def update_plan(self, plan):
+        self.plan = plan
+        self.save()
+
+
+@receiver(post_save, sender=Organization)
+def create_membership(sender, instance, created, **kwargs):
+    if created and instance.owner is not None:
+        Membership.objects.create(
+            user=instance.owner, organization=instance, role="owner"
+        )
+        assert Membership.objects.filter(
+            user=instance.owner, organization=instance
+        ).exists()
+
+
+# @receiver(post_save, sender=Organization)
+# def keep_one_owner(sender, instance, created, **kwargs):
+#     if created:
+#         membership = Membership.objects.filter(organization=instance)
+#         if membership.filter(role="owner").count() == 0:
+#             Membership.objects.create(
+#                 user=instance.owner, organization=instance, role="owner"
+#             )
+#         else:
+#             membership.exclude(user=instance.owner).update(role="member")
+#             raise ValueError("owner is already exists")
+
 
 class Membership(models.Model):
     ROLE_OPTIONS = [("owner", "Owner"), ("admin", "Admin"), ("member", "Member")]
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="membership")
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="membership",
+        default=get_default_user,  # type: ignore
+    )
     organization = models.ForeignKey(
         Organization, on_delete=models.CASCADE, related_name="membership"
     )
@@ -152,90 +251,3 @@ class PublishmentStatus(models.Model):
         default=get_default_data,  # type: ignore
     )
     updated_at = models.DateTimeField(auto_now=True)
-
-
-class Post(models.Model):
-    title = models.CharField(max_length=100)
-    content = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
-
-
-class Comment(models.Model):
-    post = models.ForeignKey(Post, related_name="comments", on_delete=models.CASCADE)
-    text = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
-
-
-import pytest
-from rest_framework import serializers
-
-from app.models import Post
-from app.utils import logger
-
-
-class CommentSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Comment
-        fields = ["id", "text", "created_at"]
-
-
-class PostSerializer(serializers.ModelSerializer):
-    comments = CommentSerializer(many=True)
-
-    class Meta:
-        model = Post
-        fields = ["id", "title", "content", "comments"]
-
-    # []fixme validated_dataにidが渡されない
-    def update(self, instance: Post, validated_data) -> Post:
-        logger.debug("")
-        comments_data = validated_data.pop("comments", [])
-        for comment_data in comments_data:
-            logger.debug(f"### comment_data: {comment_data}")
-            comment_id = comment_data.get("id", None)
-            if comment_id:
-                # 既存のコメントを更新
-                comment = Comment.objects.get(id=comment_id, post=instance)
-                for attr, value in comment_data.items():
-                    setattr(comment, attr, value)
-                comment.save()
-            else:
-                # 新しいコメントを作成
-                Comment.objects.create(post=instance, **comment_data)
-
-        # Postインスタンスの更新
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        instance.save()
-
-        return instance
-
-
-class TestPostSerializer:
-    @pytest.mark.skip("updateメソッドがid: comment.idを受け取れないためスキップ")
-    @pytest.mark.django_db
-    def test_正常系_PostSerializerからコメントを更新できる(self) -> None:
-        post = Post.objects.create(title="title", content="content")
-        comment = Comment.objects.create(post=post, text="text")
-
-        serializer = PostSerializer(
-            instance=post,
-            data={
-                "title": "new title",
-                "content": "new content",
-                "comments": [
-                    {"id": comment.id, "text": "new text"},
-                ],
-            },
-            partial=True,
-        )
-
-        # trueのとき、is_valid()はvalidated_dataに格納する
-        assert serializer.is_valid()
-        serializer.save()
-
-        # post.refresh_from_db()
-        assert post.title == "new title"
-        assert post.content == "new content"
-        assert post.comments.count() == 1
-        assert post.comments.first().text == "new text"
