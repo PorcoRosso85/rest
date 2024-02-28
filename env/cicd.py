@@ -7,7 +7,7 @@ cicd_design_with_pytest = {
         {
             "コミット前にpytestを実行するgitフック設定": [
                 ".git/hooksディレクトリを作成",
-                "`git config core.hooksPath .git//hooks/`を実行",
+                "`git config core.hooksPath .git/hooks/`を実行",
             ]
         },
     ],
